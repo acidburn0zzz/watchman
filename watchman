@@ -19,7 +19,7 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-[[ "$UID" == '0' ]] || { flag_user='1'; }
+[[ "$UID" == '0' ]] && { flag_system='1'; }
 
 while getopts "su" option; do
 	case "$option" in
@@ -35,7 +35,9 @@ done
 [[ "$flag_user" ]] && {
 	cfg_cfgdir="$HOME/.watchman"
     cfg_tmpdir="/tmp/$USER/watchman"
-} || {
+}
+
+[[ "$flag_system" ]] && {
 	cfg_cfgdir='/etc/watchman'
 	cfg_tmpdir='/tmp/watchman'
 }
