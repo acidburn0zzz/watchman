@@ -1,0 +1,230 @@
+#!/bin/bash
+
+# exec 3>/dev/null
+
+[[ "$UID" == '0' ]] || { flag_user='1'; }
+
+while getopts "su" option; do
+	case "$option" in
+		s) flag_system='1';;
+		u) flag_user='1';;
+	esac
+done
+
+[[ "$OPTIND" ]] && { shift "$[OPTIND-1]"; }
+
+# Config
+
+[[ "$flag_user" ]] && {
+	cfg_cfgdir="$HOME/.watchman"
+    cfg_tmpdir="/tmp/$USER/watchman"
+} || {
+	cfg_cfgdir='/etc/watchman'
+	cfg_tmpdir='/tmp/watchman'
+}
+
+cfg_rundir="$cfg_tmpdir/run"
+cfg_initdir="$cfg_cfgdir/init.d"
+cfg_logdir="$cfg_tmpdir/log"
+
+# Functions
+
+watchman.msg() { echo "[watchman] $1"; }
+watchman.err() { watchman.msg "(error) $1"; }
+
+watchman.die() { exit "$1"; }
+watchman.cleanup() { true; } # Placeholder
+
+watchman.init() {
+	for i in "${cfg_tmpdir}" "$cfg_rundir" "$cfg_logdir" "${cfg_cfgdir}" "$cfg_initdir"; do
+		[[ -d "$i" ]] || {
+			watchman.msg "$i does not exist, attempting to create..."
+			mkdir -p "$i" && {
+				watchman.msg "Success!"
+			} || {
+				watchman.err "Can't create $i, exiting"
+				watchman.die 9
+			}
+		}
+	done
+}
+
+watchman.start() {
+	watchman.status && {
+		watchman.err "$sname is already running"
+		return 1
+	}
+
+	[[ "$service_command" ]] || { service_command=`which "$sname"`; }
+	[[ "$service_command" ]] || {
+		watchman.err "Please specify what to run with \$service_command"
+	}
+
+	[[ "$service_workdir" ]] && { cd "$service_workdir"; }
+
+	[[ "$service_username" ]] && {
+		sudo -u "$service_username" "$service_command" $service_args &>"$service_logfile" &
+	} || {
+		"$service_command" $service_args &>"$service_logfile" &
+	}
+
+	service_pid="$!"
+	echo "$service_pid" > "$service_tech_pidfile"
+}
+
+watchman.stop() {
+	watchman.status || {
+		watchman.err "$sname doesn't seem to be running"
+		return 1
+	}
+
+	local timeout='30'
+
+	kill "$service_pid"
+
+	ps -p "$service_pid" &>/dev/null && {
+		watchman.pid_wait || return 1
+	}
+
+	return 0
+}
+
+watchman.status() {
+	local rcode='1'
+
+	[[ "$service_pid" ]] && {
+		ps -p "$service_pid" &>/dev/null && { local rcode='0'; }
+	}
+
+	return "$rcode"
+}
+
+watchman.restart() {
+	restart
+}
+
+watchman.reload() {
+	watchman.status || {
+		watchman.err "$sname doesn't seem to be running"
+		return 1
+	}
+
+	kill -HUP ${service_pid}
+}
+
+watchman.watch() {
+	while sleep 5; do
+		watchman.status || { watchman.start; }
+	done
+}
+
+watchman.pid_wait() {
+	local rc='0'
+	echo -n "[watchman] Waiting for PID to exit: $service_pid..."
+
+	while [[ "$counter" -lt "$timeout" ]] && { ps -p "$service_pid" &>/dev/null; }; do
+		echo -n '.'
+		sleep 1
+		local counter=$[counter+1]
+		[[ "$counter" -ge "$timeout" ]] && { echo 'timeout'; local rc='1'; }
+	done
+
+	[[ "$rc" == '1' ]] || { echo; }
+	
+	return "$rc"
+}
+
+watchman.depends() {
+	[[ "$action" == 'start' ]] || { return 0; }
+
+	for s in "$@"; do
+		watchman "$s" status >/dev/null || {
+			watchman.msg "$sname depends on $s, so starting ${s}..."
+			"$0" "$s" start || {
+				watchman.err "Starting $s failed, aborting."
+				return 1
+			}
+		}
+	done
+
+	return 0
+}
+
+# Default functions
+
+start() {
+	watchman.start && {
+		watchman.msg "$sname started ($service_pid)"
+	}
+}
+
+stop() {
+	watchman.stop && {
+		watchman.msg "$sname stopped"
+	}
+}
+
+restart() { stop; start; }
+
+watch() {
+	watchman.status && start
+	watchman.watch
+}
+
+status() {
+	watchman.status && {
+		watchman.msg "$sname is running ($service_pid)"
+	} || {
+		watchman.msg "$sname is down"
+		return 1
+	}
+}
+
+reload() { watchman.reload; }
+
+# Main part
+
+trap watchman.cleanup EXIT
+watchman.init
+
+sname=`basename $1`
+action="$2"
+
+[[ "$action" ]] || { action='status'; }
+
+service_logfile="$cfg_logdir/$sname.log"
+service_fifo="$cfg_rundir/$sname.fifo"
+service_tech_pidfile="$cfg_rundir/$sname.pid"
+[[ -f "$service_tech_pidfile" ]] && { service_pid=`cat "$service_tech_pidfile"`; }
+
+[[ "$sname" ]] || {
+	watchman.err "What?"
+	watchman.die 5
+}
+
+[[ -d "$cfg_cfgdir/groups/$sname" ]] && {
+	group_services=( `ls "$cfg_cfgdir/groups/$sname"` )
+	for i in ${group_services[@]}; do
+		"$cfg_initdir/$i" "$action" || { exitcode='1'; }
+	done
+} || {
+	[[ -f "$cfg_initdir/$sname" ]] && {
+		source "$cfg_initdir/$sname"
+	} || {
+		watchman.err "$sname doesn't exist in $cfg_initdir"
+		watchman.die 3
+	}
+
+	[[ "$service_pidfile" ]] && {
+		[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
+	}
+
+	type -t "$action" &>/dev/null && {
+		"$action" || { exitcode='1'; }
+	} || {
+		watchman.err "Function $action is not defined for this service"
+		watchman.die 11
+	}
+}
+
+[[ "$exitcode" ]] && { exit "$exitcode"; } || { exit 0; }

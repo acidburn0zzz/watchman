@@ -1,0 +1,7 @@
+#!/opt/bin/watchman -s
+# A service file for starting a service under another user
+
+service_username='xonotic'
+service_workdir='/home/xonotic/Xonotic/'
+service_command='/home/xonotic/Xonotic/xonotic-linux64-dedicated'
+service_logfile='/home/xonotic/server.log'
