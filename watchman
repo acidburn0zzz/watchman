@@ -87,7 +87,7 @@ watchman.start() {
 			return 1
 		}
 
-		su "$service_username" -lc "$service_command $service_args" &>"$service_logfile" &
+		su -l "$service_username" -c "$service_command $service_args" &>"$service_logfile" &
 	} || {
 		"$service_command" $service_args &>"$service_logfile" &
 	}
