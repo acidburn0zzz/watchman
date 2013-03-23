@@ -29,10 +29,11 @@ watchman.usage() {
 	flag_user='1'
 }
 
-while getopts "su" option; do
+while getopts "suh" option; do
 	case "$option" in
 		s) flag_system='1';;
 		u) flag_user='1';;
+		h|*) watchman.usage; exit 77;;
 	esac
 done
 
