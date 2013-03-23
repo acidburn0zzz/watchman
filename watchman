@@ -152,7 +152,7 @@ watchman.reload() {
 	}
 
 	kill -HUP ${service_pid} && {
-		watchman.msg "$sname reloaded"
+		watchman.msg "Reloading ${sname}..."
 	} || {
 		watchman.err "Failed to reload $sname"
 		return 1
