@@ -98,6 +98,8 @@ watchman.start() {
 
 	service_pid="$!"
 	echo "$service_pid" > "$service_tech_pidfile"
+
+	watchman.status || { return 1; }
 }
 
 watchman.stop() {
@@ -183,12 +185,16 @@ watchman.depends() {
 start() {
 	watchman.start && {
 		watchman.msg "$sname started ($service_pid)"
+	} || {
+		watchman.err "Failed to start $sname"
 	}
 }
 
 stop() {
 	watchman.stop && {
 		watchman.msg "$sname stopped"
+	} || {
+		watchman.err "Failed to stop $sname"
 	}
 }
 
@@ -210,7 +216,10 @@ status() {
 
 reload() {
 	watchman.reload && {
-		watchman.msg "Reloading ${sname}..."
+		watchman.msg "${sname} reloaded"
+	} || {
+		watchman.err "Failed to reload $sname"
+		return 1
 	}
 }
 
