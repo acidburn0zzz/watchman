@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright (c) 2012 fbt <fbt@fleshless.org>
 # All rights reserved.
 #
@@ -87,7 +87,7 @@ watchman.start() {
 			return 1
 		}
 
-		su -s '/bin/bash' "$service_username" -c "$service_command $service_args" &>"$service_logfile" &
+		su -s "$BASH" "$service_username" -c "$service_command $service_args" &>"$service_logfile" &
 	} || {
 		"$service_command" $service_args &>"$service_logfile" &
 	}
