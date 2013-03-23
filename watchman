@@ -19,6 +19,10 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+watchman.usage() {
+	echo "Usage: watchman <service> <action>"
+}
+
 [[ "$UID" == '0' ]] && {
 	flag_system='1'
 } || {
@@ -99,7 +103,14 @@ watchman.start() {
 	service_pid="$!"
 	echo "$service_pid" > "$service_tech_pidfile"
 
-	watchman.status || { return 1; }
+	watchman.status && {
+		watchman.msg "$sname started ($service_pid)"
+	} || {
+		watchman.err "Failed to start $sname"
+		return 1
+	}
+
+	return 0
 }
 
 watchman.stop() {
@@ -113,7 +124,12 @@ watchman.stop() {
 	kill "$service_pid"
 
 	ps -p "$service_pid" &>/dev/null && {
-		watchman.pid_wait || return 1
+		watchman.pid_wait && {
+			watchman.msg "$sname stopped"
+		} || {
+			watchman.err "Failed to stop $sname"
+			return 1
+		}
 	}
 
 	return 0
@@ -129,17 +145,20 @@ watchman.status() {
 	return "$rcode"
 }
 
-watchman.restart() {
-	restart
-}
-
 watchman.reload() {
 	watchman.status || {
 		watchman.err "$sname doesn't seem to be running"
 		return 1
 	}
 
-	kill -HUP ${service_pid}
+	kill -HUP ${service_pid} && {
+		watchman.msg "$sname reloaded"
+	} || {
+		watchman.err "Failed to reload $sname"
+		return 1
+	}
+
+	return 0
 }
 
 watchman.watch() {
@@ -182,23 +201,10 @@ watchman.depends() {
 
 # Default functions
 
-start() {
-	watchman.start && {
-		watchman.msg "$sname started ($service_pid)"
-	} || {
-		watchman.err "Failed to start $sname"
-	}
-}
-
-stop() {
-	watchman.stop && {
-		watchman.msg "$sname stopped"
-	} || {
-		watchman.err "Failed to stop $sname"
-	}
-}
-
+start() { watchman.start; }
+stop() { watchman.stop; }
 restart() { stop; start; }
+reload() { watchman.reload; }
 
 watch() {
 	watchman.status || start
@@ -214,34 +220,27 @@ status() {
 	}
 }
 
-reload() {
-	watchman.reload && {
-		watchman.msg "${sname} reloaded"
-	} || {
-		watchman.err "Failed to reload $sname"
-		return 1
-	}
-}
-
 # Main part
 
 trap watchman.cleanup EXIT
 watchman.init
 
-sname=`basename $1`
-action="$2"
+[[ "$1" ]] || {
+	watchman.usage
+	watchman.die 9
+}
 
-[[ "$action" ]] || { action='status'; }
+sname=`basename $1`
+
+action="$2"
 
 service_logfile="$cfg_logdir/$sname.log"
 service_fifo="$cfg_rundir/$sname.fifo"
 service_tech_pidfile="$cfg_rundir/$sname.pid"
+
 [[ -f "$service_tech_pidfile" ]] && { service_pid=`cat "$service_tech_pidfile"`; }
 
-[[ "$sname" ]] || {
-	watchman.err "What?"
-	watchman.die 5
-}
+[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
 
 [[ -d "$cfg_cfgdir/groups/$sname" ]] && {
 	group_services=( `ls "$cfg_cfgdir/groups/$sname"` )
@@ -257,6 +256,14 @@ service_tech_pidfile="$cfg_rundir/$sname.pid"
 	} || {
 		watchman.err "$sname doesn't exist in $cfg_initdir"
 		watchman.die 3
+	}
+
+	[[ "$action" ]] || {
+		for i in ${service_actions[@]}; do
+			type -t "$i" &>/dev/null && { _actions+="$i|"; }
+		done
+		watchman.msg "Usage: $sname <${_actions%|*}>"
+		watchman.die 11
 	}
 
 	[[ "$service_pidfile" ]] && {
