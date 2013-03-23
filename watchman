@@ -124,14 +124,13 @@ watchman.stop() {
 	kill "$service_pid"
 
 	ps -p "$service_pid" &>/dev/null && {
-		watchman.pid_wait && {
-			watchman.msg "$sname stopped"
-		} || {
+		watchman.pid_wait || {
 			watchman.err "Failed to stop $sname"
 			return 1
 		}
 	}
 
+	watchman.msg "$sname stopped"
 	return 0
 }
 
