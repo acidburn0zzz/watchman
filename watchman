@@ -186,7 +186,7 @@ stop() {
 restart() { stop; start; }
 
 watch() {
-	watchman.status && start
+	watchman.status || start
 	watchman.watch
 }
 
@@ -228,7 +228,10 @@ service_tech_pidfile="$cfg_rundir/$sname.pid"
 	done
 } || {
 	[[ -f "$cfg_initdir/$sname" ]] && {
-		source "$cfg_initdir/$sname"
+		source "$cfg_initdir/$sname" || {
+			watchman.err "Service script exited abnormally"
+			watchman.die 13
+		}
 	} || {
 		watchman.err "$sname doesn't exist in $cfg_initdir"
 		watchman.die 3
