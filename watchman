@@ -198,6 +198,14 @@ watchman.depends() {
 	return 0
 }
 
+watchman.service_usage() {
+	for i in ${service_actions[@]}; do
+		type -t "$i" &>/dev/null && { _actions+="$i|"; }
+	done
+	watchman.msg "Usage: $sname <${_actions%|*}>"
+	watchman.die 11
+}
+
 # Default functions
 
 start() { watchman.start; }
@@ -241,40 +249,48 @@ service_tech_pidfile="$cfg_rundir/$sname.pid"
 
 [[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
 
-[[ -d "$cfg_cfgdir/groups/$sname" ]] && {
-	group_services=( `ls "$cfg_cfgdir/groups/$sname"` )
-	for i in ${group_services[@]}; do
-		"$cfg_initdir/$i" "$action" || { exitcode='1'; }
-	done
-} || {
-	[[ -f "$cfg_initdir/$sname" ]] && {
-		source "$cfg_initdir/$sname" || {
-			watchman.err "Service script exited abnormally"
-			watchman.die 13
-		}
-	} || {
-		watchman.err "$sname doesn't exist in $cfg_initdir"
-		watchman.die 3
-	}
+[[ -d "$cfg_cfgdir/groups/$sname" ]] && { service_type='group'; }
 
-	[[ "$action" ]] || {
-		for i in ${service_actions[@]}; do
-			type -t "$i" &>/dev/null && { _actions+="$i|"; }
+[[ "$service_type" ]] || { service_type='service'; }
+
+case "$service_type" in
+	group)
+		group_services=( `ls "$cfg_cfgdir/groups/$sname"` )
+		for i in "${group_services[@]}"; do
+			[[ -h "$cfg_cfgdir/groups/$sname/$i" ]] && {
+				service_script=`realpath "$cfg_cfgdir/groups/$sname/$i"`
+				"$service_script" "$action" || { exitcode='1'; }
+			} || {
+				"$0" "$i" "$action" || { exitcode='1'; }
+			}
 		done
-		watchman.msg "Usage: $sname <${_actions%|*}>"
-		watchman.die 11
-	}
+	;;
 
-	[[ "$service_pidfile" ]] && {
-		[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
-	}
+	service)
+		[[ -f "$cfg_initdir/$sname" ]] && {
+			source "$cfg_initdir/$sname" || {
+				watchman.err "Service script exited abnormally"
+				watchman.die 13
+			}
+		} || {
+			watchman.err "$sname doesn't exist in $cfg_initdir"
+			watchman.die 3
+		}
 
-	type -t "$action" &>/dev/null && {
-		"$action" || { exitcode='1'; }
-	} || {
-		watchman.err "Function $action is not defined for this service"
-		watchman.die 11
-	}
-}
+
+		[[ "$action" ]] || { watchman.service_usage; }
+
+		[[ "$service_pidfile" ]] && {
+			[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
+		}
+
+		type -t "$action" &>/dev/null && {
+			"$action" || { exitcode='1'; }
+		} || {
+			watchman.err "Function $action is not defined for this service"
+			watchman.die 11
+		}
+	;;
+esac
 
 [[ "$exitcode" ]] && { exit "$exitcode"; } || { exit 0; }
