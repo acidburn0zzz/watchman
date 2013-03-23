@@ -208,7 +208,11 @@ status() {
 	}
 }
 
-reload() { watchman.reload; }
+reload() {
+	watchman.reload && {
+		watchman.msg "Reloading ${sname}..."
+	}
+}
 
 # Main part
 
