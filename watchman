@@ -95,7 +95,12 @@ watchman.start() {
 		"$service_command" $service_args &>"$service_logfile" &
 	}
 
-	service_pid="$!"
+	[[ "$service_pidfile" ]] && {
+		service_pid=`cat "$service_pidfile"`
+	} || {
+		service_pid="$!"
+	}
+	
 	echo "$service_pid" > "$service_tech_pidfile"
 
 	watchman.status && {
