@@ -24,17 +24,41 @@
 watchman.usage() {
 	echo "Usage: watchman [flags] <service> <action>"
 	echo "Flags:"
-	echo "	-u|--user		Force user mode"
-	echo "	-s|--system		Force system mode"
-	echo "	-h|--help		Show this message"
+	echo "	-u, --user		Force user mode"
+	echo "	-s, --system		Force system mode"
+	echo "	-h, --help		Show this message"
 }
 
 watchman.args() {
+	watchman.msg "Args: $*"
+
 	for i in "$@"; do
+		watchman.msg "parsing: $i"
+
 		case "$i" in
 			-u|--user) flag_user='1';;
 			-s|--system) unset flag_user;;
-			-h|--help|-*) watchman.usage; return 1;;
+			-h|--help) watchman.usage; return 1;;
+			
+			--*)
+				watchman.err "Invalid key: $i"
+				watchman.usage; return 1
+			;;
+
+			-*)
+				key_array=( `echo "${i##*-}" | fold -w1` )
+
+				[[ "${#key_array[@]}" -gt 1 ]] || {
+					watchman.err "Invalid key: $i"
+					watchman.usage
+					return 1
+				}
+
+				for k in "${key_array[@]}"; do
+					watchman.args -"$k" || { return 1; }
+				done
+			;;
+			
 			*) args+=( "$i" )
 		esac
 	done
