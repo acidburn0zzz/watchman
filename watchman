@@ -29,34 +29,54 @@ watchman.usage() {
 	echo "	-h, --help		Show this message"
 }
 
-watchman.args() {
+watchman.args_normalise() {
 	for i in "$@"; do
 		case "$i" in
-			-u|--user) flag_user='1';;
-			-s|--system) unset flag_user;;
-			-h|--help) watchman.usage; return 1;;
-			
-			--*)
-				watchman.err "Invalid key: $i"
-				watchman.usage; return 1
-			;;
+			--*) echo "$i";;
 
 			-*)
-				key_array=( `echo "${i##*-}" | fold -w1` )
+				local _keys=( `echo "${i##*-}" | fold -w1` )
 
-				[[ "${#key_array[@]}" -gt 1 ]] || {
-					watchman.err "Invalid key: $i"
-					watchman.usage
-					return 1
+				[[ "${#_keys[@]}" -gt 1 ]] && {
+					for k in ${_keys[@]}; do
+						echo "-$k"
+					done
+				} || {
+					echo "$i"
 				}
-
-				for k in "${key_array[@]}"; do
-					watchman.args -"$k" || { return 1; }
-				done
 			;;
-			
-			*) args+=( "$i" )
+
+			*) echo "$i";;
 		esac
+	done
+}
+
+watchman.args() {
+	_args=( `watchman.args_normalise "$@"` )
+
+	for i in `seq "${#_args[@]}"`; do
+		[[ "$_arg_skip" ]] && {
+			unset _arg_skip
+		} || {
+			local _pos="$[i-1]"
+			local _arg="${_args[$_pos]}"
+			local _optarg="${_args[$i]}"
+
+			case "$_arg" in
+				-u|--user) flag_user='1';;
+				-s|--system) unset flag_user;;
+				-h|--help) watchman.usage; return 1;;
+
+				-t|--test) watchman.msg "(debug) test='$_optarg'"; _arg_skip='1';;
+
+				-*)
+					watchman.err "Invalid key: $_arg"
+					watchman.usage; return 1
+				;;
+
+				*) args+=( "$_arg" );;
+			esac
+		}
 	done
 }
 
