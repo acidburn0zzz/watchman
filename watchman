@@ -19,37 +19,26 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-watchman.usage() {
-	echo "Usage: watchman <service> <action>"
-}
-
-[[ "$UID" == '0' ]] || { flag_user='1'; }
-
-while getopts "suh" option; do
-	case "$option" in
-		s) unset flag_user;;
-		u) flag_user='1';;
-		h|*) watchman.usage; exit 77;;
-	esac
-done
-
-[[ "$OPTIND" ]] && { shift "$[OPTIND-1]"; }
-
-# Config
-
-[[ "$flag_user" ]] && {
-	cfg_cfgdir="$HOME/.watchman"
-    cfg_tmpdir="/tmp/$USER/watchman"
-} || {
-	cfg_cfgdir='/etc/watchman'
-	cfg_tmpdir='/tmp/watchman'
-}
-
-cfg_rundir="$cfg_tmpdir/run"
-cfg_initdir="$cfg_cfgdir/init.d"
-cfg_logdir="$cfg_tmpdir/log"
-
 # Functions
+
+watchman.usage() {
+	echo "Usage: watchman [flags] <service> <action>"
+	echo "Flags:"
+	echo "	-u|--user		Force user mode"
+	echo "	-s|--system		Force system mode"
+	echo "	-h|--help		Show this message"
+}
+
+watchman.args() {
+	for i in "$@"; do
+		case "$i" in
+			-u|--user) flag_user='1';;
+			-s|--system) unset flag_user;;
+			-h|--help|-*) watchman.usage; return 1;;
+			*) args+=( "$i" )
+		esac
+	done
+}
 
 watchman.msg() { echo "[watchman] $1"; }
 watchman.err() { watchman.msg "(error) $1"; }
@@ -96,7 +85,7 @@ watchman.start() {
 	}
 
 	[[ "$service_pidfile" ]] && {
-		service_pid=`cat "$service_pidfile"`
+		[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
 	} || {
 		service_pid="$!"
 	}
@@ -227,19 +216,38 @@ status() {
 	}
 }
 
-# Main part
-
 trap watchman.cleanup EXIT
-watchman.init
 
-[[ "$1" ]] || {
-	watchman.usage
-	watchman.die 9
+# Arguments and options:
+
+[[ "$UID" == '0' ]] || { flag_user='1'; }
+
+watchman.args "$@" || exit 13
+
+[[ "$flag_user" ]] && {
+	cfg_cfgdir="$HOME/.watchman"
+    cfg_tmpdir="/tmp/$USER/watchman"
+} || {
+	cfg_cfgdir='/etc/watchman'
+	cfg_tmpdir='/tmp/watchman'
 }
 
-sname=`basename $1`
+cfg_rundir="$cfg_tmpdir/run"
+cfg_initdir="$cfg_cfgdir/init.d"
+cfg_logdir="$cfg_tmpdir/log"
 
-action="$2"
+# Main:
+
+watchman.init
+
+[[ "${args[0]}" ]] || {
+	watchman.usage
+    watchman.die 9
+}
+
+sname=`basename ${args[0]}`
+
+action="${args[1]}"
 
 service_logfile="$cfg_logdir/$sname.log"
 service_fifo="$cfg_rundir/$sname.fifo"
