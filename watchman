@@ -30,11 +30,7 @@ watchman.usage() {
 }
 
 watchman.args() {
-	watchman.msg "Args: $*"
-
 	for i in "$@"; do
-		watchman.msg "parsing: $i"
-
 		case "$i" in
 			-u|--user) flag_user='1';;
 			-s|--system) unset flag_user;;
