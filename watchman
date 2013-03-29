@@ -87,7 +87,7 @@ watchman.die() { exit "$1"; }
 watchman.cleanup() { true; } # Placeholder
 
 watchman.init() {
-	for i in "${cfg_tmpdir}" "$cfg_rundir" "$cfg_logdir" "${cfg_cfgdir}" "$cfg_initdir"; do
+	for i in "${cfg_init_dirs[@]}"; do
 		[[ -d "$i" ]] || {
 			watchman.msg "$i does not exist, attempting to create..."
 			mkdir -p "$i" && {
@@ -271,6 +271,13 @@ cfg_rundir="$cfg_tmpdir/run"
 cfg_initdir="$cfg_cfgdir/init.d"
 cfg_logdir="$cfg_tmpdir/log"
 
+cfg_init_dirs+=( "$cfg_cfgdir" )
+cfg_init_dirs+=( "$cfg_tmpdir" )
+cfg_init_dirs+=( "$cfg_rundir" )
+cfg_init_dirs+=( "$cfg_initdir" )
+cfg_init_dirs+=( "$cfg_logdir" )
+cfg_init_dirs+=( "$cfg_cfgdir/groups/all" )
+
 # Main:
 
 watchman.init
@@ -299,6 +306,16 @@ service_tech_pidfile="$cfg_rundir/$sname.pid"
 case "$service_type" in
 	group)
 		group_services=( `ls "$cfg_cfgdir/groups/$sname"` )
+
+		[[ "$group_services" ]] || {
+			[[ "$sname" == 'all' ]] && { group_services=( `ls "$cfg_initdir"` ); }
+		}
+
+		[[ "$group_services" ]] || {
+			watchman.err "No services in group $sname"
+			watchman.die 15
+		}
+
 		for i in "${group_services[@]}"; do
 			[[ -h "$cfg_cfgdir/groups/$sname/$i" ]] && {
 				service_script=`realpath "$cfg_cfgdir/groups/$sname/$i"`

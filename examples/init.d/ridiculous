@@ -1,0 +1,9 @@
+#!/opt/bin/watchman -s
+# A slightly more complicated service file with function overrides
+
+service_command='/bin/false'
+service_args='do not lie to me'
+service_pidfile='/var/run/false.pid'
+service_workdir='/var/some/silly/place'
+service_username='service_user'
+service_logfile='/var/log/false.log'
