@@ -1,5 +1,5 @@
 #!/opt/bin/watchman -s
-# A slightly more complicated service file with function overrides
+# A made up service with all the standard variables overriden
 
 service_command='/bin/false'
 service_args='do not lie to me'
