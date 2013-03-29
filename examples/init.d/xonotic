@@ -1,4 +1,4 @@
-#!/opt/bin/watchman -s
+#!/usr/bin/env watchman
 # A service file for starting a service under another user
 
 service_username='xonotic'

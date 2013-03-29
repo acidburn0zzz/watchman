@@ -1,4 +1,4 @@
-#!/opt/bin/watchman -s
+#!/usr/bin/env watchman
 # A slightly more complicated service file with function overrides
 
 service_command='/usr/sbin/nginx'
