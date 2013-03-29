@@ -132,12 +132,7 @@ watchman.start() {
 	
 	echo "$service_pid" > "$service_tech_pidfile"
 
-	watchman.status && {
-		watchman.msg "$sname started ($service_pid)"
-	} || {
-		watchman.err "Failed to start $sname"
-		return 1
-	}
+	watchman.msg "$sname started ($service_pid)"
 
 	return 0
 }
