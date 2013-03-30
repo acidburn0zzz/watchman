@@ -22,7 +22,7 @@ Variables
 There are some variables you can use to alter a service's behaviour.
 All of them are optional. Yes, I mean all of them.
 
-	$service_command	# The service's executable
+	$service_command	# The service's executable. Watchman will try to find the service in $PATH by the service name, so yes, even this is optional.
 	$service_args		# Arguments to $service_command
 	$service_username	# The user to run the service as
 	$service_workdir	# The directory to cd to before running $service_command
