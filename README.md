@@ -1,8 +1,8 @@
 watchman
 ========
 
-My half-assed rc in bash
-Documentation pending
+My half-assed rc in bash.
+Documentation pending.
 
 Services
 --------
