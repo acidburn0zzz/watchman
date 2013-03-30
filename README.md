@@ -34,6 +34,7 @@ Functions
 ---------
 
 Standart functions:
+
 	start()		# Start the service. Calls watchman.start().
 	stop()		# Stop the service. Calls watchman.stop().
 	restart()	# Restart the service. Calls stop(), then start().
@@ -43,6 +44,7 @@ Standart functions:
 	depends()	# Starts the specified services. Calls watchman.depends.
 
 Internal functions:
+
 	watchman.msg <message>						# Prints a message in the format of: “[watchman] $message”.
 	watchman.err <error message>				# Prints a message in the format of: “[watchman] (error) $message” to stderr.
 	watchman.die <exitcode>						# Exit.
