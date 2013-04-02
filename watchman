@@ -340,10 +340,8 @@ case "$service_type" in
 
 		[[ "$action" ]] || { watchman.service_usage; }
 
-		[[ "$service_pid" ]] || {
-			[[ "$service_pidfile" ]] && {
-				[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
-			}
+		[[ "$service_pidfile" ]] && {
+			[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
 		}
 
 		type -t "$action" &>/dev/null && {
