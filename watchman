@@ -98,6 +98,13 @@ watchman.init() {
 			}
 		}
 	done
+
+	[[ -e "$cfg_cfgdir/config.sh" ]] && { source "$cfg_cfgdir/config.sh" || return 1; }
+	[[ -e "$cfg_cfgdir/config.d" ]] && {
+		for i in `ls $cfg_cfgdir/config.d`; do
+			source "$cfg_cfgdir/config.d/$i"
+		done
+	}
 }
 
 watchman.start() {
