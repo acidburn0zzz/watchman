@@ -9,7 +9,6 @@ nginx.test_config() { "$service_command" -tq; }
 nginx.reload() {
 	nginx.test_config && {
 		watchman.reload
-		watchman.msg "Reloading nginx configuration... "
 	} || {
 		watchman.err "Nginx config test failed, not reloading"
 		return 1
