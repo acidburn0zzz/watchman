@@ -6,7 +6,8 @@ Documentation pending.
 
 Releases
 --------
-I don't really do releases. The master branch should be stable enough to use at this point though, I don't merge untested shit.
+I don't really do releases. Don't expect them often.
+The master branch should be stable enough to use at this point though, I don't merge untested shit.
 
 Services
 --------
