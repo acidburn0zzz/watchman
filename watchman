@@ -145,19 +145,28 @@ watchman.start() {
 }
 
 watchman.stop() {
+	local timeout
+
 	watchman.status || {
 		watchman.err "$sname doesn't seem to be running"
 		return 1
 	}
 
-	local timeout='30'
+	[[ "$service_type" == 'conf' ]] && {
+		for i in "$service_tech_pidfile" "$service_pidfile"; do
+			[[ -f "$i" ]] && { rm "$i"; }
+		done
+		watchman.msg "$sname is a conf service, removing it's pidfiles."
+	} || {
+		timeout='30'
 
-	kill "$service_pid"
+		kill "$service_pid"
 
-	ps -p "$service_pid" &>/dev/null && {
-		watchman.pid_wait || {
-			watchman.err "Failed to stop $sname"
-			return 1
+		ps -p "$service_pid" &>/dev/null && {
+			watchman.pid_wait || {
+				watchman.err "Failed to stop $sname"
+				return 1
+			}
 		}
 	}
 
