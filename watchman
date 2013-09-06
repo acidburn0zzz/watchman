@@ -203,8 +203,9 @@ watchman.reload() {
 }
 
 watchman.watch() {
-	while sleep 5; do
-		watchman.status || { watchman.start; }
+	while true; do
+		wait "$service_pid"
+		watchman.start
 	done
 }
 
@@ -256,7 +257,12 @@ restart() { stop; start; }
 reload() { watchman.reload; }
 
 watch() {
-	watchman.status || start
+	watchman.status && {
+		watchman.err "$sname is already running ($service_pid)"
+		return 1
+	}
+
+	start
 	watchman.watch
 }
 
