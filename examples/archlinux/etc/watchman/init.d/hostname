@@ -1,0 +1,18 @@
+#!/bin/env watchman
+# A slightly more complicated service file with function overrides
+
+
+service_command='hostname'
+service_args="$cfg_hostname"
+
+start() {
+	[[ -e "/etc/hostname" ]] && {
+		cfg_hostname=`cat /etc/hostname`
+	} || {
+		watchman.err "/etc/hostname: no such file"
+		return 1
+	}
+
+	watchman.start
+	watchman.done
+}

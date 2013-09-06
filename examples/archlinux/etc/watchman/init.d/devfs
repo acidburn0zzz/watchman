@@ -1,0 +1,48 @@
+#!/bin/env watchman
+# A slightly more complicated service file with function overrides
+
+mount_dev() {
+	mount -n -t tmpfs dev /dev
+	busybox mdev -s
+	mkidr /dev/pts
+}
+
+mount_devpts() {
+	[[ -d "/dev/pts" ]] || { mkdir -m 0755 "/dev/pts"; }
+	mount -n -t devpts /dev/pts -o noexec,nosuid,gid=5,mode=0620 /dev/pts
+}
+
+mount_devmqueue() {
+	[[ -d "/dev/mqueue" ]] || { mkdir -m 1777 "/dev/mqueue"; }
+	mount -n -t mqueue /dev/mqueue -o noexec,nosuid,nodev /dev/mqueue
+}
+
+start() {
+	mountpoint -q /dev || {
+		watchman.msg "Mounting /dev..."
+		mount_dev
+	}
+
+	mountpoint -q /dev/pts || {
+		watchman.msg "Mounting /dev/pts"
+		mount_devpts
+	}
+
+	mountpoint -q /dev/mqueue || {
+		watchman.msg "Mounting /dev/mqueue"
+		mount_devmqueue
+	}
+
+	watchman.done
+}
+
+stop() {
+	for i in '/dev/pts' '/dev/mqueue' '/dev'; do
+		mountpoint -q "$i" && {
+			watchman.msg "Unmounting $i..."
+			umount "$i"
+		}
+	done
+
+	rm "$cfg_rundir/${sname}.done"
+}
