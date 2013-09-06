@@ -29,17 +29,19 @@ watchman.usage() {
 	echo "	-h, --help		Show this message"
 }
 
-watchman.args_normalise() {
+watchman.getopt() {
+	local keys
+
 	for i in "$@"; do
 		case "$i" in
 			--*) echo "$i";;
 
 			-*)
-				local _keys=( `echo "${i##*-}" | fold -w1` )
+				keys=( `echo "${i##*-}" | fold -w1` )
 
-				[[ "${#_keys[@]}" -gt 1 ]] && {
-					for k in ${_keys[@]}; do
-						echo "-$k"
+				[[ "${#keys[@]}" -gt 1 ]] && {
+					for k in ${keys[@]}; do
+						echo "-${k}"
 					done
 				} || {
 					echo "$i"
@@ -52,31 +54,23 @@ watchman.args_normalise() {
 }
 
 watchman.args() {
-	_args=( `watchman.args_normalise "$@"` )
+	while [[ "$1" ]]; do
+		case "$1" in
+			-u|--user) flag_user='1';;
+			-s|--system) unset flag_user;;
+			-h|--help) watchman.usage; exit 0;;
 
-	for i in `seq "${#_args[@]}"`; do
-		[[ "$_arg_skip" ]] && {
-			unset _arg_skip
-		} || {
-			local _pos="$[i-1]"
-			local _arg="${_args[$_pos]}"
-			local _optarg="${_args[$i]}"
+			-t|--test) watchman.msg "(debug) test='$2'"; shift;;
 
-			case "$_arg" in
-				-u|--user) flag_user='1';;
-				-s|--system) unset flag_user;;
-				-h|--help) watchman.usage; return 1;;
+			-*)
+				watchman.err "Invalid key: $1"
+				watchman.usage
+				exit 1
+			;;
 
-				-t|--test) watchman.msg "(debug) test='$_optarg'"; _arg_skip='1';;
-
-				-*)
-					watchman.err "Invalid key: $_arg"
-					watchman.usage; return 1
-				;;
-
-				*) args+=( "$_arg" );;
-			esac
-		}
+			*) args+=( "$1" );;
+		esac
+		shift
 	done
 }
 
@@ -176,7 +170,7 @@ watchman.stop() {
 
 watchman.status() {
 	[[ "$service_pid" ]] && {
-		[[ "$service_type" == 'conf' ]] && {
+		[[ "$service_type" == 'oneshot' ]] && {
 			return 0
 		} || {
 			ps -p "$service_pid" &>/dev/null && { return 0; }
@@ -281,7 +275,7 @@ trap watchman.cleanup EXIT
 
 [[ "$UID" == '0' ]] || { flag_user='1'; }
 
-watchman.args "$@" || exit 13
+watchman.args `watchman.getopt "$@"` || exit 13
 
 [[ "$flag_user" ]] && {
 	cfg_cfgdir="$HOME/.watchman"
@@ -373,6 +367,12 @@ case "$service_type" in
 		} || {
 			watchman.err "Function $action is not defined for this service"
 			watchman.die 11
+		}
+
+		[[ "$action" == 'start' ]] && {
+			[[ -f "$service_tech_pidfile" ]] || {
+				echo 'oneshot' > "$service_tech_pidfile"
+			}
 		}
 	;;
 esac
