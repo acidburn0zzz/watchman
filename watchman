@@ -146,11 +146,11 @@ watchman.stop() {
 		return 1
 	}
 
-	[[ "$service_type" == 'conf' ]] && {
+	[[ "$service_type" == 'oneshot' ]] && {
 		for i in "$service_tech_pidfile" "$service_pidfile"; do
 			[[ -f "$i" ]] && { rm "$i"; }
 		done
-		watchman.msg "$sname is a conf service, removing it's pidfiles."
+		watchman.msg "$sname is a oneshot service, removing it's pidfiles."
 	} || {
 		timeout='30'
 
