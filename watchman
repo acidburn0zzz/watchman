@@ -282,7 +282,7 @@ watchman.args "$@" || exit 13
 	cfg_tmpdir="/tmp/$USER/watchman"
 } || {
 	cfg_cfgdir='/etc/watchman'
-	cfg_tmpdir='/tmp/watchman'
+	cfg_tmpdir='/run/watchman'
 }
 
 cfg_rundir="$cfg_tmpdir/run"
