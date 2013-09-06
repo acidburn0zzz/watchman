@@ -240,6 +240,7 @@ watchman.service_usage() {
 }
 
 watchman.done() { touch "$cfg_rundir/${sname}.done"; }
+watchman.undone() { rm "$cfg_rundir/${sname}.done"; }
 
 # Default functions
 
