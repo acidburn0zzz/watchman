@@ -146,21 +146,14 @@ watchman.stop() {
 		return 1
 	}
 
-	[[ "$service_type" == 'oneshot' ]] && {
-		for i in "$service_tech_pidfile" "$service_pidfile"; do
-			[[ -f "$i" ]] && { rm "$i"; }
-		done
-		watchman.msg "$sname is a oneshot service, removing it's pidfiles."
-	} || {
-		timeout='30'
+	timeout='30'
 
-		kill "$service_pid"
+	kill "$service_pid"
 
-		ps -p "$service_pid" &>/dev/null && {
-			watchman.pid_wait || {
-				watchman.err "Failed to stop $sname"
-				return 1
-			}
+	ps -p "$service_pid" &>/dev/null && {
+		watchman.pid_wait || {
+			watchman.err "Failed to stop $sname"
+			return 1
 		}
 	}
 
@@ -170,11 +163,7 @@ watchman.stop() {
 
 watchman.status() {
 	[[ "$service_pid" ]] && {
-		[[ "$service_type" == 'oneshot' ]] && {
-			return 0
-		} || {
-			ps -p "$service_pid" &>/dev/null && { return 0; }
-		}
+		ps -p "$service_pid" &>/dev/null && { return 0; }
 	}
 
 	return 1
@@ -367,12 +356,6 @@ case "$service_type" in
 		} || {
 			watchman.err "Function $action is not defined for this service"
 			watchman.die 11
-		}
-
-		[[ "$action" == 'start' ]] && {
-			[[ -f "$service_tech_pidfile" ]] || {
-				echo 'oneshot' > "$service_tech_pidfile"
-			}
 		}
 	;;
 esac
