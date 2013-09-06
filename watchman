@@ -369,7 +369,7 @@ case "$service_type" in
 		type -t "$action" &>/dev/null && {
 			"$action" || { exitcode='1'; }
 		} || {
-			watchman.err "Function $action is not defined for this service"
+			watchman.err "Function $action is not defined for $sname"
 			watchman.die 11
 		}
 	;;
