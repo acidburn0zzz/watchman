@@ -146,6 +146,11 @@ watchman.stop() {
 		return 1
 	}
 
+	[[ -f "$cfg_rundir/${sname}.done" ]] && {
+		watchman.err "$sname is a oneshot service. You cannot stop what is already stopped."
+		return 1
+	}
+
 	timeout='30'
 
 	kill "$service_pid"
@@ -162,6 +167,8 @@ watchman.stop() {
 }
 
 watchman.status() {
+	[[ -f "$cfg_rundir/${sname}.done" ]] && { return 0; }
+
 	[[ "$service_pid" ]] && {
 		ps -p "$service_pid" &>/dev/null && { return 0; }
 	}
@@ -231,6 +238,8 @@ watchman.service_usage() {
 	watchman.msg "Usage: $sname <${_actions%|*}>"
 	watchman.die 11
 }
+
+watchman.done() { touch "$cfg_rundir/${sname}.done"; }
 
 # Default functions
 
