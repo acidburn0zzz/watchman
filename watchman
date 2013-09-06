@@ -260,7 +260,11 @@ watch() {
 
 status() {
 	watchman.status && {
-		watchman.msg "$sname is running ($service_pid)"
+		[[ "$service_pid" ]] && {
+			watchman.msg "$sname is running ($service_pid)"
+		} || {
+			watchman.msg "$sname is enabled"
+		}
 	} || {
 		watchman.msg "$sname is down"
 		return 1
