@@ -166,13 +166,15 @@ watchman.stop() {
 }
 
 watchman.status() {
-	local rcode='1'
-
 	[[ "$service_pid" ]] && {
-		ps -p "$service_pid" &>/dev/null && { local rcode='0'; }
+		[[ "$service_type" == 'conf' ]] && {
+			return 0
+		} || {
+			ps -p "$service_pid" &>/dev/null && { return 0; }
+		}
 	}
 
-	return "$rcode"
+	return 1
 }
 
 watchman.reload() {
@@ -268,7 +270,7 @@ watchman.args "$@" || exit 13
 
 [[ "$flag_user" ]] && {
 	cfg_cfgdir="$HOME/.watchman"
-    cfg_tmpdir="/tmp/$USER/watchman"
+	cfg_tmpdir="/tmp/$USER/watchman"
 } || {
 	cfg_cfgdir='/etc/watchman'
 	cfg_tmpdir='/tmp/watchman'
