@@ -147,7 +147,8 @@ watchman.stop() {
 	}
 
 	[[ -f "$cfg_rundir/${sname}.done" ]] && {
-		watchman.err "$sname is a oneshot service. You cannot stop what is already stopped."
+		watchman.undone
+		watchman.err "$sname is a oneshot service, but it doesn't have a custom stop function! Removed $cfg_rundir/${sname}.done."
 		return 1
 	}
 
