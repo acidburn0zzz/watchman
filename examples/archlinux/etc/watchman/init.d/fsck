@@ -1,0 +1,20 @@
+#!/bin/env watchman
+# A slightly more complicated service file with function overrides
+
+service_command='/bin/fsck'
+service_args="-A"
+
+unset stop restart status
+
+start() {
+	watchman.msg "Remounting / as read-only..."
+	mount / -o remount,ro
+
+	watchman.msg "Checking filesystems..."
+	/bin/fsck -A || { /bin/bash; }
+
+	watchman.msg "Remounting / as read-write..."
+	mount / -o remount,rw
+
+	watchman.done
+}

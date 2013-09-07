@@ -1,0 +1,5 @@
+#!/bin/env watchman
+# A slightly more complicated service file with function overrides
+
+service_command='/bin/syslog-ng'
+service_pidfile='/run/syslog-ng.pid'

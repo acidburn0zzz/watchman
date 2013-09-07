@@ -1,0 +1,4 @@
+#!/usr/local/bin/watchman
+
+service_command='/usr/sbin/dhcpcd'
+service_pidfile='/var/run/dhcpcd.pid'

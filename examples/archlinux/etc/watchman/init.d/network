@@ -7,8 +7,10 @@ service_command='ip'
 service_args='link set lo up'
 
 start() {
-	watchman.msg "Activating the loopback interface (lo)..."
-	watchman.start && watchman.done
+	watchman.start && {
+		watchman.msg "Activating the loopback interface (lo)..."
+		watchman.done
+	}
 }
 
 stop() {
