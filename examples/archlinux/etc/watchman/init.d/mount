@@ -6,7 +6,3 @@ service_command='/bin/mount'
 service_args='-a'
 
 unset stop
-
-start() {
-	watchman.start && watchman.done
-}

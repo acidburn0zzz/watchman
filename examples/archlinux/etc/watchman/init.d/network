@@ -9,7 +9,6 @@ service_args='link set lo up'
 start() {
 	watchman.start && {
 		watchman.msg "Activating the loopback interface (lo)..."
-		watchman.done
 	}
 }
 
@@ -19,5 +18,6 @@ stop() {
 		return 1
 	}
 	watchman.msg "Deactivating the loopback interface (lo)..."
-	ip link set lo down && watchman.undone
+	ip link set lo down
+	watchman.stop
 }
