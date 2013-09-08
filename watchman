@@ -344,6 +344,24 @@ watchman.main() {
 				return 17
 			}
 		;;
+
+		group)
+			group_services=( `ls "$cfg_initdir/groups"` )
+
+			[[ "${group_services}" ]] || {
+				watchman.err "Group $service_name is empty"
+				return 35
+			}
+
+			for i in "${group_services[@]}"; do
+				[[ -h "$cfg_cfgdir/groups/$sname/$i" ]] && {
+					service_script=`realpath "$cfg_cfgdir/groups/$sname/$i"`
+					"$service_script" "$action"
+				} || {
+					"$0" "$i" "$action"
+				}
+			done
+		;;
 	esac
 }
 
