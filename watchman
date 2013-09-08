@@ -312,8 +312,6 @@ watchman.main() {
 	[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
 	[[ -e "$cfg_dir/groups/$service_name" ]] && { service_type='group'; }
 
-	echo "service type: $service_type"	
-
 	service_type=${service_type:-single}
 
 	case "$service_type" in
