@@ -2,4 +2,4 @@
 # A slightly more complicated service file with function overrides
 
 service_command='/bin/agetty'
-service_args="38400 ${sname##*-} linux"
+service_args="38400 ${service_name##*-} linux"
