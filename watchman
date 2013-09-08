@@ -348,7 +348,7 @@ watchman.main() {
 		;;
 
 		group)
-			group_services=( `ls "$cfg_initdir/groups"` )
+			group_services=( `ls "$cfg_dir/groups/$service_name"` )
 
 			[[ "${group_services}" ]] || {
 				watchman.err "Group $service_name is empty"
