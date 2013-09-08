@@ -179,7 +179,7 @@ watchman.depends() {
 
 	for s in "$@"; do
 		watchman "$s" status >/dev/null || {
-			watchman.msg "$sname depends on $s, so starting ${s}..."
+			watchman.msg "$service_name depends on $s, so starting ${s}..."
 			"$0" "$s" start || {
 				watchman.err "Starting $s failed, aborting."
 				return 31
@@ -356,8 +356,8 @@ watchman.main() {
 			}
 
 			for i in "${group_services[@]}"; do
-				[[ -h "$cfg_cfgdir/groups/$sname/$i" ]] && {
-					service_script=`realpath "$cfg_cfgdir/groups/$sname/$i"`
+				[[ -h "$cfg_cfgdir/groups/$service_name/$i" ]] && {
+					service_script=`realpath "$cfg_cfgdir/groups/$service_name/$i"`
 					"$service_script" "$action"
 				} || {
 					"$0" "$i" "$action"
