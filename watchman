@@ -308,10 +308,12 @@ watchman.main() {
 
 	action="${args[1]}"
 
-	[[ -f "$service_pidfile_int" ]] && { service_pid=`cat "$service_pidfile_int"`; }
+	[[ -e "$service_pidfile_int" ]] && { service_pid=`cat "$service_pidfile_int"`; }
 	[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
-	[[ -d "$cfg_cfgdir/groups/$service_name" ]] && { service_type='group'; }
-	
+	[[ -e "$cfg_dir/groups/$service_name" ]] && { service_type='group'; }
+
+	echo "service type: $service_type"	
+
 	service_type=${service_type:-single}
 
 	case "$service_type" in
