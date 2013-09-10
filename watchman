@@ -143,9 +143,9 @@ watchman.start() {
 			watchman.err "You can't use \$service_username if you are not root!"
 			return 19
 		}
-		su -s "$BASH" "$service_username" -c "$service_command $service_args" &>"$service_logfile" &
+		su -s "$BASH" "$service_username" -c "$service_command $service_args" >"$service_logfile" &
 	} || {
-		"$service_command" $service_args &>"$service_logfile" &
+		"$service_command" $service_args >"$service_logfile" &
 	}
 
 	case "$service_type" in
@@ -160,7 +160,10 @@ watchman.start() {
 			} || {
 				service_pid="$!"
 			}
-			
+
+			# Exit if the service instantly dies or doesn't start at all
+			kill -0 "$service_pid" &>/dev/null || { return 1; }
+
 			echo "$service_pid" > "$service_pidfile_int"
 			watchman.msg "$service_name started ($service_pid)"
 		;;
@@ -338,7 +341,10 @@ watchman.main() {
 			}
 
 			type -t "$action" &>/dev/null && {
-				"$action" || { return "$?"; }
+				"$action" || {
+					watchman.err "Could not start $service_name ($?)"
+					return "$?"
+				}
 			} || {
 				watchman.err "Function $action is not defined for $service_name"
 				return 17
