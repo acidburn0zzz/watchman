@@ -3,13 +3,9 @@
 
 service_type='oneshot'
 
-service_command='ip'
-service_args='link set lo up'
-
 start() {
-	watchman.start && {
-		watchman.msg "Activating the loopback interface (lo)..."
-	}
+	watchman.msg "Activating the loopback interface (lo)..."
+	ip link set lo up
 }
 
 stop() {
