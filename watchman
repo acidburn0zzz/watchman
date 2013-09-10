@@ -162,7 +162,10 @@ watchman.start() {
 			}
 
 			# Exit if the service instantly dies or doesn't start at all
-			kill -0 "$service_pid" &>/dev/null || { return 1; }
+			kill -0 "$service_pid" &>/dev/null || {
+				watchman.err "Failed to start $service_name ($?)"
+				return 1
+			}
 
 			echo "$service_pid" > "$service_pidfile_int"
 			watchman.msg "$service_name started ($service_pid)"
