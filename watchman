@@ -300,6 +300,8 @@ watch() {
 	watchman.respawn
 }
 
+depends() { watchman.depends "$@"; }
+
 watchman.main() {
 	watchman.init "$@" || { return "$?"; }
 
