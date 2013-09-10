@@ -341,10 +341,7 @@ watchman.main() {
 			}
 
 			type -t "$action" &>/dev/null && {
-				"$action" || {
-					watchman.err "Could not start $service_name ($?)"
-					return "$?"
-				}
+				"$action" || { return "$?"; }
 			} || {
 				watchman.err "Function $action is not defined for $service_name"
 				return 17
