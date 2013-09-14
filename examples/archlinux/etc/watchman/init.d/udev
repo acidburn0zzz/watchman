@@ -18,8 +18,9 @@ udev.populate_dev() {
 }
 
 start() {
-	udev.populate_dev
 	watchman.start
+	sleep 1
+	udev.populate_dev
 }
 
 reload() {

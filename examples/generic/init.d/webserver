@@ -1,3 +1,0 @@
-#!/usr/bin/env watchman
-# Dummy init service for a group
-# Copy this file to /etc/watchman/init.d/${group_name}

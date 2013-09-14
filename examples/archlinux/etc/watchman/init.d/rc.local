@@ -5,3 +5,7 @@ service_command="$BASH"
 service_args='/etc/rc.local'
 
 unset stop
+
+start() {
+	[[ -f "/etc/rc.local" ]] && { watchman.start; }
+}

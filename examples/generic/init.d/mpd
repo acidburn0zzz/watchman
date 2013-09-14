@@ -1,3 +1,0 @@
-#!/usr/bin/env watchman
-# The simplest service file possible.
-# watchman will find the executable by the script name with which
