@@ -3,7 +3,7 @@
 
 service_type='oneshot'
 
-cfg_mounts+=( 'dev:tmpfs:defaults:/dev' )
+cfg_mounts+=( 'dev:devtmpfs:defaults:/dev' )
 cfg_mounts+=( '/dev/pts:devpts:noexec,nosuid,gid=5,mode=0620:/dev/pts' )
 cfg_mounts+=( '/dev/mqueue:mqueue:noexec,nosuid,nodev:/dev/mqueue' )
 cfg_mounts+=( '/dev/pts:devpts:noexec,nosuid,gid=5,mode=0620:/dev/pts' )
