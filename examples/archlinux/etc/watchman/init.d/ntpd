@@ -1,0 +1,7 @@
+#!/bin/env watchman
+
+cfg_ntpd_config='/etc/ntp.conf'
+
+service_command='/bin/ntpd'
+service_pidfile='/run/ntpd.pid'
+service_args="-c $cfg_ntpd_config -p $service_pidfile"

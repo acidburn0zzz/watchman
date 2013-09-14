@@ -1,0 +1,22 @@
+#!/bin/env watchman
+# A slightly more complicated service file with function overrides
+
+service_type='oneshot'
+
+cfg_mounts+=( 'run:tmpfs:defaults:/run' )
+
+unset stop
+
+start() {
+	for m in ${cfg_mounts[@]}; do
+		fs_dev=`echo "$m" | cut -d':' -f1`
+		fs_type=`echo "$m" | cut -d':' -f2`
+		fs_opts=`echo "$m" | cut -d':' -f3`
+		fs_mountpoint=`echo "$m" | cut -d':' -f4`
+
+		mountpoint -q "$fs_mountpoint" || {
+			[[ -d "$fs_mountpoint" ]] || { mkdir "$fs_mountpoint"; }
+			mount "$fs_dev" -n -t "$fs_type" -o "$fs_opts" "$fs_mountpoint"
+		}
+	done
+}
