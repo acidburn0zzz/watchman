@@ -201,15 +201,15 @@ watchman.pid_wait() {
 	echo -n "[watchman] Waiting for PID to exit: ${1}..."
 
 	while [[ "$counter" -lt "$service_stop_timeout" ]] && { kill -0 &>/dev/null "$1"; }; do
-		echo -n '.'
 		counter=$[counter+1]
 
 		[[ "$counter" -ge "$service_stop_timeout" ]] && {
 			echo 'timeout'
 			return 23
 		}
-
+		
 		sleep 1
+		echo -n '.'
 	done
 
 	echo
