@@ -197,19 +197,24 @@ watchman.depends() {
 }
 
 watchman.pid_wait() {
-	local rc='0'
+	counter='0'
 	echo -n "[watchman] Waiting for PID to exit: ${1}..."
 
-	while [[ "$counter" -lt "$timeout" ]] && { ps -p "$1" &>/dev/null; }; do
+	while [[ "$counter" -lt "$service_stop_timeout" ]] && { kill -0 &>/dev/null "$1"; }; do
 		echo -n '.'
+		counter=$[counter+1]
+
+		[[ "$counter" -ge "$service_stop_timeout" ]] && {
+			echo 'timeout'
+			return 23
+		}
+
 		sleep 1
-		local counter=$[counter+1]
-		[[ "$counter" -ge "$timeout" ]] && { echo 'timeout'; local rc='1'; }
 	done
 
-	[[ "$rc" == '1' ]] || { echo; }
-	
-	return "$rc"
+	echo
+
+	return 0
 }
 
 watchman.stop() {
@@ -247,7 +252,7 @@ watchman.status() {
 
 		*)
 			[[ "$service_pid" ]] && {
-				ps -p "$service_pid" &>/dev/null && { return 0; }
+				kill -0 "$service_pid" &>/dev/null && { return 0; }
 			}
 		;;
 	esac
