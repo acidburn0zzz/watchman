@@ -3,20 +3,17 @@
 
 service_type='oneshot'
 
-service_command='ip'
-service_args='link set lo up'
-
 start() {
-	watchman.start && {
-		watchman.msg "Activating the loopback interface (lo)..."
-	}
+	watchman.msg "Activating the loopback interface (lo)..."
+	ip link set lo up
 }
 
 stop() {
 	watchman.status || {
-		watchman.err "$sname is already disabled"
+		watchman.err "$service_name is already disabled"
 		return 1
 	}
 	watchman.msg "Deactivating the loopback interface (lo)..."
 	ip link set lo down
+	watchman.stop
 }

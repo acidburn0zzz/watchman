@@ -1,6 +1,8 @@
 #!/bin/env watchman
 # A slightly more complicated service file with function overrides
 
+depends miscfs
+
 service_type='oneshot'
 service_command='/bin/mount'
 service_args='-a'

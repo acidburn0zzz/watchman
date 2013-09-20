@@ -3,9 +3,9 @@
 
 service_type='oneshot'
 
+cfg_mounts+=( 'proc:proc:defaults:/proc' )
 cfg_mounts+=( 'run:tmpfs:defaults:/run' )
 cfg_mounts+=( 'sys:sysfs:defaults:/sys' )
-cfg_mounts+=( 'proc:proc:defaults:/proc' )
 
 start() {
 	for m in ${cfg_mounts[@]}; do
@@ -16,9 +16,13 @@ start() {
 
 		mountpoint -q "$fs_mountpoint" || {
 			[[ -d "$fs_mountpoint" ]] || { mkdir "$fs_mountpoint"; }
-			mount "$fs_dev" -n -t "$fs_type" -o "$fs_opts" "$fs_mountpoint"
+			mount "$fs_dev" -n -t "$fs_type" -o "$fs_opts" "$fs_mountpoint" || {
+				could not mount "$fs_dev on $fs_mountpoint :("
+			}
 		}
 	done
+
+	return 0
 }
 
 stop() {
