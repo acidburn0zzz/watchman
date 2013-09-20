@@ -7,3 +7,8 @@ hotplug() {
 	echo "Enabling hotplug..."
 	echo /sbin/mdev > /proc/sys/kernel/hotplug
 }
+
+start() {
+	watchman.start
+	hotplug
+}

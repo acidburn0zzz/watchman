@@ -9,7 +9,7 @@ cfg_udev_settle_timeout="${cfg_udev_settle_timeout:-60}"
 watchman.depends devfs
 
 udev.populate_dev() {
-	watchman.msg "Populating /dev with udev..."
+	watchman.msg "Populating /dev..."
 	udevadm trigger --type=subsystems --action=add
 	udevadm trigger --type=devices --action=add
 	watchman.msg "Waiting for uevents..."

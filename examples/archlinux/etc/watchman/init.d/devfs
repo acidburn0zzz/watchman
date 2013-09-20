@@ -1,33 +1,45 @@
 #!/bin/env watchman
 # A slightly more complicated service file with function overrides
 
-service_type='oneshot'
+mount_dev() {
+	mount -n -t tmpfs dev /dev
+	busybox mdev -s
+	mkidr /dev/pts
+}
 
-cfg_mounts+=( 'dev:devtmpfs:defaults:/dev' )
-cfg_mounts+=( '/dev/pts:devpts:noexec,nosuid,gid=5,mode=0620:/dev/pts' )
-cfg_mounts+=( '/dev/mqueue:mqueue:noexec,nosuid,nodev:/dev/mqueue' )
-cfg_mounts+=( '/dev/pts:devpts:noexec,nosuid,gid=5,mode=0620:/dev/pts' )
-cfg_mounts+=( 'tmpfs:tmpfs:defaults,mode=0777:/dev/shm' )
+mount_devpts() {
+	[[ -d "/dev/pts" ]] || { mkdir -m 0755 "/dev/pts"; }
+	mount -n -t devpts /dev/pts -o noexec,nosuid,gid=5,mode=0620 /dev/pts
+}
+
+mount_devmqueue() {
+	[[ -d "/dev/mqueue" ]] || { mkdir -m 1777 "/dev/mqueue"; }
+	mount -n -t mqueue /dev/mqueue -o noexec,nosuid,nodev /dev/mqueue
+}
 
 start() {
-	for m in ${cfg_mounts[@]}; do
-		fs_dev=`echo "$m" | cut -d':' -f1`
-		fs_type=`echo "$m" | cut -d':' -f2`
-		fs_opts=`echo "$m" | cut -d':' -f3`
-		fs_mountpoint=`echo "$m" | cut -d':' -f4`
+	mountpoint -q /dev || {
+		watchman.msg "Mounting /dev..."
+		mount_dev
+	}
 
-		mountpoint -q "$fs_mountpoint" || {
-			[[ -d "$fs_mountpoint" ]] || { mkdir "$fs_mountpoint"; }
-			mount "$fs_dev" -n -t "$fs_type" -o "$fs_opts" "$fs_mountpoint"
-		}
-	done
+	mountpoint -q /dev/pts || {
+		watchman.msg "Mounting /dev/pts"
+		mount_devpts
+	}
+
+	mountpoint -q /dev/mqueue || {
+		watchman.msg "Mounting /dev/mqueue"
+		mount_devmqueue
+	}
+
 }
 
 stop() {
-	for m in "${cfg_mounts[@]}"; do
-		fs_mountpoint=`echo "$m" | cut -d ':' -f 4`
-		mountpoint -q "$fs_mountpoint" && {
-			umount "$fs_mountpoint"
+	for i in '/dev/pts' '/dev/mqueue' '/dev'; do
+		mountpoint -q "$i" && {
+			watchman.msg "Unmounting $i..."
+			umount "$i"
 		}
 	done
 }

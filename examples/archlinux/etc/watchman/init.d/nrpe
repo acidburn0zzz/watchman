@@ -1,0 +1,8 @@
+#!/bin/env watchman
+# A slightly more complicated service file with function overrides
+
+cfg_nrpe_config='/etc/nrpe/nrpe.cfg'
+
+service_command='/bin/nrpe'
+service_args="-c $cfg_nrpe_config -d"
+service_pidfile='/run/nrpe.pid'

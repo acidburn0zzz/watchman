@@ -1,7 +1,5 @@
 #!/bin/env watchman
 
-depends network
-
 service_command='/usr/sbin/dhcpcd'
-service_args='-q'
 service_pidfile='/var/run/dhcpcd.pid'
+service_args='-q'

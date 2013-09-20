@@ -1,0 +1,20 @@
+#!/bin/env watchman
+
+service_command='/usr/bin/dbus-daemon'
+service_args='--system'
+service_pidfile='/run/dbus/pid'
+
+start_pre() {
+	/usr/bin/dbus-uuidgen --ensure=/etc/machine-id
+	[[ -e /run/dbus ]] || { mkdir /run/dbus; }
+}
+
+start() {
+	start_pre
+	watchman.start
+}
+
+stop() {
+	[[ -e "$service_pidfile" ]] && { rm "$service_pidfile"; }
+	watchman.stop
+}

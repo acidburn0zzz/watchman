@@ -1,0 +1,7 @@
+#!/usr/bin/env watchman
+
+cfg_ovpn_instance="${service_name##*-}"
+
+service_command="/usr/sbin/openvpn"
+service_workdir="/etc/openvpn/$cfg_ovpn_instance"
+service_args="client.cfg"
