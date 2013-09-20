@@ -1,5 +1,4 @@
 #!/bin/env watchman
-# A slightly more complicated service file with function overrides
 
 service_type='oneshot'
 
