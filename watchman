@@ -249,6 +249,14 @@ watchman.stop() {
 					return 23
 				}
 			}
+
+			for i in "${service_pidfile}" "${service_pidfile_int}"; do
+				[[ -e "$i" ]] && {
+					rm "$i" || {
+						watchman.err "Failed to remove pidfile: $i"
+					}
+				}
+			done
 		;;
 	esac
 }
