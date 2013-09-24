@@ -344,7 +344,7 @@ watchman.main() {
 				service_script="${args[0]}"
 			} || {
 				[[ -e "$cfg_initdir/$service_name" ]] && {
-					service_script="$cfg_initdir/${args[0]}"
+					service_script="$cfg_initdir/$service_name"
 				}
 			}
 
