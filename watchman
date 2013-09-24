@@ -156,7 +156,16 @@ watchman.start() {
 
 		*)
 			[[ "$service_pidfile" ]] && {
-				[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
+				[[ -f "$service_pidfile" ]] && {
+					service_pid=`cat "$service_pidfile"`
+
+					kill -0 "$service_pid" &>/dev/null || {
+						watchman.msg "Waiting to make sure the process had time to wite its pid..."
+						sleep 3
+
+						service_pid=`cat "$service_pidfile"`
+					}
+				}
 			} || {
 				service_pid="$!"
 			}
