@@ -270,9 +270,16 @@ watchman.service_usage() {
 	watchman.msg "Usage: $service_name <${valid_actions%|*}>"
 }
 
+watchman.reload() {
+	[[ "$service_pid" ]] || { return 1; }
+
+	kill -1 "$service_pid" 
+}
+
 start() { watchman.start; return "$?"; }
 stop() { watchman.stop; return "$?"; }
 restart() { stop; start; return "$?"; }
+reload() { watchman.reload; return "$?"; }
 status() {
 	local service_status
 
