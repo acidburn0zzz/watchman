@@ -271,8 +271,12 @@ watchman.service_usage() {
 }
 
 watchman.reload() {
-	[[ "$service_pid" ]] || { return 1; }
+	watchman.status || {
+		watchman.err "$service_name is not running"
+		return 1
+	}
 
+	watchman.msg "Reloading ${service_name}..."
 	kill -1 "$service_pid" 
 }
 
