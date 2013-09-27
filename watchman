@@ -143,9 +143,9 @@ watchman.start() {
 			watchman.err "You can't use \$service_username if you are not root!"
 			return 19
 		}
-		su -s "$BASH" "$service_username" -c "$service_command $service_args" >"$service_logfile" &
+		su -s "$BASH" "$service_username" -c "$service_command $service_args" &>"$service_logfile" &
 	} || {
-		"$service_command" $service_args >"$service_logfile" &
+		"$service_command" $service_args &>"$service_logfile" &
 	}
 
 	case "$service_type" in
