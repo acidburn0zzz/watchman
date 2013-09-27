@@ -1,7 +1,6 @@
 #!/bin/env watchman
-# A slightly more complicated service file with function overrides
 
-
+service_type='oneshot'
 service_command='hostname'
 service_args="$cfg_hostname"
 

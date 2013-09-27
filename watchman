@@ -156,7 +156,16 @@ watchman.start() {
 
 		*)
 			[[ "$service_pidfile" ]] && {
-				[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
+				[[ -f "$service_pidfile" ]] && {
+					service_pid=`cat "$service_pidfile"`
+
+					kill -0 "$service_pid" &>/dev/null || {
+						watchman.msg "Waiting to make sure the process had time to wite its pid..."
+						sleep 3
+
+						service_pid=`cat "$service_pidfile"`
+					}
+				}
 			} || {
 				service_pid="$!"
 			}
@@ -240,6 +249,14 @@ watchman.stop() {
 					return 23
 				}
 			}
+
+			for i in "${service_pidfile}" "${service_pidfile_int}"; do
+				[[ -e "$i" ]] && {
+					rm "$i" || {
+						watchman.err "Failed to remove pidfile: $i"
+					}
+				}
+			done
 		;;
 	esac
 }
@@ -270,9 +287,20 @@ watchman.service_usage() {
 	watchman.msg "Usage: $service_name <${valid_actions%|*}>"
 }
 
+watchman.reload() {
+	watchman.status || {
+		watchman.err "$service_name is not running"
+		return 1
+	}
+
+	watchman.msg "Reloading ${service_name}..."
+	kill -1 "$service_pid" 
+}
+
 start() { watchman.start; return "$?"; }
 stop() { watchman.stop; return "$?"; }
 restart() { stop; start; return "$?"; }
+reload() { watchman.reload; return "$?"; }
 status() {
 	local service_status
 
@@ -333,7 +361,7 @@ watchman.main() {
 				service_script="${args[0]}"
 			} || {
 				[[ -e "$cfg_initdir/$service_name" ]] && {
-					service_script="$cfg_initdir/${args[0]}"
+					service_script="$cfg_initdir/$service_name"
 				}
 			}
 

@@ -1,8 +1,6 @@
 #!/bin/env watchman
-# A slightly more complicated service file with function overrides
 
-service_command='/bin/fsck'
-service_args="-A"
+service_type='oneshot'
 
 unset stop restart status
 
@@ -11,9 +9,8 @@ start() {
 	mount / -o remount,ro
 
 	watchman.msg "Checking filesystems..."
-	/bin/fsck -A 
+	/bin/fsck -A -p
 
 	watchman.msg "Remounting / as read-write..."
 	mount / -o remount,rw
-
 }

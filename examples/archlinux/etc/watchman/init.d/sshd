@@ -1,5 +1,4 @@
 #!/bin/env watchman
-# A slightly more complicated service file with function overrides
 
 watchman.depends network
 
@@ -9,3 +8,7 @@ service_command='/bin/sshd'
 service_args="-f $cfg_sshd_cfgdir/sshd_config"
 service_pidfile='/run/sshd.pid'
 
+sshd_genkeys() {
+	[[ -e "/etc/ssh/ssh_host_key" ]] || { ssh-keygen -A; }
+	watchman.start
+}
