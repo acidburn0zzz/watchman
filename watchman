@@ -336,6 +336,8 @@ watch() {
 depends() { watchman.depends "$@"; }
 
 watchman.main() {
+	local rcode='0'
+
 	watchman.init "$@" || { return "$?"; }
 
 	[[ "${args[0]}" ]] || {
@@ -397,13 +399,15 @@ watchman.main() {
 			for i in "${group_services[@]}"; do
 				[[ -h "$cfg_cfgdir/groups/$service_name/$i" ]] && {
 					service_script=`realpath "$cfg_cfgdir/groups/$service_name/$i"`
-					"$service_script" "$action"
+					"$service_script" "$action" || { rcode="$?"; }
 				} || {
-					"$0" "$i" "$action"
+					"$0" "$i" "$action" || { rcode="$?"; }
 				}
 			done
 		;;
 	esac
+
+	return "$rcode"
 }
 
 # Main

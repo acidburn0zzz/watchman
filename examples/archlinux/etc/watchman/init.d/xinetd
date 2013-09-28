@@ -1,5 +1,0 @@
-#!/bin/env watchman
-
-service_command='/usr/bin/xinetd'
-service_pidfile="/run/xinetd.pid"
-service_args="-pidfile $service_pidfile"

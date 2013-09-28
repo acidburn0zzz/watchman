@@ -1,9 +1,0 @@
-#!/bin/env watchman
-
-depends miscfs
-
-service_type='oneshot'
-service_command='/bin/mount'
-service_args='-a'
-
-unset stop

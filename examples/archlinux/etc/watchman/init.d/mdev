@@ -1,9 +1,0 @@
-#!/bin/env watchman
-
-service_command='/usr/local/sbin/mdev'
-service_rgs='-s'
-
-hotplug() {
-	echo "Enabling hotplug..."
-	echo /sbin/mdev > /proc/sys/kernel/hotplug
-}

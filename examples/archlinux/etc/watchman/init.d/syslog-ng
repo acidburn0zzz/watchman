@@ -1,4 +1,0 @@
-#!/bin/env watchman
-
-service_command='/bin/syslog-ng'
-service_pidfile='/run/syslog-ng.pid'

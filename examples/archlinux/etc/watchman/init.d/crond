@@ -1,4 +1,0 @@
-#!/bin/env watchman
-
-service_command='/bin/crond'
-service_args='-n'

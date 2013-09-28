@@ -1,4 +1,0 @@
-#!/bin/env watchman
-
-service_command='/bin/agetty'
-service_args="38400 ${service_name##*-} linux"
