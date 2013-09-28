@@ -20,8 +20,6 @@ Groups are directories in the watchman's config dir (/etc/watchman/groups or $HO
 Any action performed on a group is performed on all of the services in it.
 Watchman's exit code will be non-zero if any of the actions fail.
 
-The only special group for now is the “all” group, which is created by default (and re-created if removed). If the group is empty, then all actions performed on it will be performed on all of the services in watchman's init directory. If it's not empty, it's being treated like any other group.
-
 Variables
 ---------
 There are some variables you can use to alter a service's behaviour.
