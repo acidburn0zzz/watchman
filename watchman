@@ -102,7 +102,7 @@ watchman.init() {
 
 	cfg_initdir="$cfg_dir/init.d"
 
-	cfg_init_dirs+=( "$cfg_dir" "$cfg_tmpdir" "$cfg_rundir" "$cfg_initdir" "$cfg_logdir" )
+	cfg_init_dirs+=( "$cfg_dir" "$cfg_rundir" "$cfg_initdir" "$cfg_logdir" )
 
 	for i in "${cfg_init_dirs[@]}"; do
 		[[ -e "$i" ]] || {
