@@ -102,14 +102,13 @@ watchman.init() {
 
 	cfg_initdir="$cfg_dir/init.d"
 
-	cfg_init_dirs+=( "$cfg_dir" "$cfg_rundir" "$cfg_initdir" )
+	cfg_init_dirs+=( "$cfg_dir" "$cfg_rundir" "$cfg_initdir" "$cfg_logdir" )
 
 	for i in "${cfg_init_dirs[@]}"; do
 		[[ -e "$i" ]] || {
 			watchman.debug "$i does not exist, creating..."
 			mkdir -p "$i" || {
-				watchman.err "Can't create $i, exiting"
-				return 5
+				watchman.err "Can't create $i!"
 			}
 		}
 	done
@@ -137,10 +136,7 @@ watchman.start() {
 	[[ "$service_workdir" ]] && { cd "$service_workdir"; }
 
 	[[ -e "$cfg_logdir" ]] || {
-		mkdir -p "$cfg_logdir" || {
-			watchman.msg "Warning! Logdir cannot be created!"
-			service_logfile='/dev/null'
-		}
+		service_logfile='/dev/null'
 	}
 
 	[[ -e "$service_logfile" ]] && {
