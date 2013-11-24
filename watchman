@@ -21,8 +21,6 @@
 
 # Config
 
-
-
 # Functions
 
 watchman.usage() {
@@ -94,14 +92,14 @@ watchman.init() {
 
 	[[ "$flag_user" ]] && {
 		cfg_dir="${cfg_dir_user:-$HOME/.watchman}"
-		cfg_tmpdir="${cfg_tmpdir_user:-/tmp/$USER/watchman}"
+		cfg_rundir="${cfg_rundir:-/tmp/$USER/watchman/run}"
+		cfg_logdir="${cfg_logdir:-$HOME/.local/var/log/watchman}"
 	} || {
 		cfg_dir="${cfg_dir_system:-/etc/watchman}"
-		cfg_tmpdir="${cfg_tmpdir_system:-/run/watchman}"
+		cfg_rundir="${cfg_rundir:-/run/watchman}"
+		cfg_logdir="${cfg_logdir:-/var/log/watchman}"
 	}
 
-	cfg_rundir="$cfg_tmpdir/run"
-	cfg_logdir="$cfg_tmpdir/log"
 	cfg_initdir="$cfg_dir/init.d"
 
 	cfg_init_dirs+=( "$cfg_dir" "$cfg_tmpdir" "$cfg_rundir" "$cfg_initdir" "$cfg_logdir" )
