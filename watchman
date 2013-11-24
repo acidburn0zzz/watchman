@@ -136,6 +136,18 @@ watchman.start() {
 
 	[[ "$service_workdir" ]] && { cd "$service_workdir"; }
 
+	[[ -e "$service_logfile" ]] && {
+		[[ -w "$service_logfile" ]] || {
+			watchman.msg "Warning! Logfile is not writeable!"
+			service_logfile="/dev/null"
+		}
+	} || {
+		touch "$service_logfile" || {
+			watchman.msg "Warning! Can't create logfile!"
+			service_logfile="/dev/null"
+		}
+	}
+
 	[[ "$service_username" ]] && {
 		[[ "$UID" == '0' ]] || {
 			watchman.err "You can't use \$service_username if you are not root!"
