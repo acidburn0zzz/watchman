@@ -61,8 +61,3 @@ Internal functions:
 	watchman.reload								# Sends SIGHUP to the service.
 	watchman.watch								# Checks in a loop if the service is running. Restarts it if needed.
 	watchman.pid_wait							# Wait for the service pid to die.
-
-test
-----
-
-This is a test
