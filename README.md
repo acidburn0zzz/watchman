@@ -45,6 +45,7 @@ Standart functions:
 	status()	# Show the service's status. Calls watchman.status().
 	watch()		# Watch the service. Starts the service if needed and calls watchman.watch().
 	depends()	# Starts the specified services. Calls watchman.depends.
+	logs()		# Shows the service stdout log. Calls watchman.logs.
 
 Internal functions:
 
@@ -61,3 +62,4 @@ Internal functions:
 	watchman.reload								# Sends SIGHUP to the service.
 	watchman.watch								# Checks in a loop if the service is running. Restarts it if needed.
 	watchman.pid_wait							# Wait for the service pid to die.
+	watchman.logs								# Shows the service stdout log from $service_logfile.
