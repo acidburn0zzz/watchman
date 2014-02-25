@@ -135,7 +135,7 @@ watchman.start() {
 
 	[[ "$service_workdir" ]] && { cd "$service_workdir"; }
 
-	touch "$service_logfile" 2>/dev/null || {
+	:>"$service_logfile" 2>/dev/null || {
 		watchman.msg "Warning! Logfile is not writeable! Defaulting to /dev/null"
 		service_logfile='/dev/null'
 	}
@@ -152,7 +152,7 @@ watchman.start() {
 
 	case "$service_type" in
 		oneshot)
-			touch "$cfg_rundir/${service_name}.done" || {
+			:>"$cfg_rundir/${service_name}.done" || {
 				watchman.msg "Warning! Can't mark ${service_name} as enabled."
 			}
 			watchman.msg "$service_name enabled"
