@@ -135,20 +135,9 @@ watchman.start() {
 
 	[[ "$service_workdir" ]] && { cd "$service_workdir"; }
 
-	[[ -e "$cfg_logdir" ]] || {
+	touch "$service_logfile" 2>/dev/null || {
+		watchman.msg "Warning! Logfile is not writeable! Defaulting to /dev/null"
 		service_logfile='/dev/null'
-	}
-
-	[[ -e "$service_logfile" ]] && {
-		[[ -w "$service_logfile" ]] || {
-			watchman.msg "Warning! Logfile is not writeable!"
-			service_logfile='/dev/null'
-		}
-	} || {
-		touch "$service_logfile" || {
-			watchman.msg "Warning! Can't create logfile!"
-			service_logfile='/dev/null'
-		}
 	}
 
 	[[ "$service_username" ]] && {
@@ -163,7 +152,9 @@ watchman.start() {
 
 	case "$service_type" in
 		oneshot)
-			touch "$cfg_rundir/${service_name}.done"
+			touch "$cfg_rundir/${service_name}.done" || {
+				watchman.msg "Warning! Can't mark ${service_name} as enabled."
+			}
 			watchman.msg "$service_name enabled"
 		;;
 
@@ -310,6 +301,15 @@ watchman.reload() {
 	kill -1 "$service_pid" 
 }
 
+watchman.logs() {
+	[[ -e "$service_logfile" ]] && {
+		watchman.msg "Output for ${service_name}:"
+		cat "$service_logfile" 2>/dev/null || {
+			watchman.err "Can't read the logfile :("
+		}
+	}
+}
+
 start() { watchman.start; return "$?"; }
 stop() { watchman.stop; return "$?"; }
 restart() { stop; start; return "$?"; }
@@ -335,6 +335,7 @@ status() {
 
 	return 33
 }
+logs() { watchman.logs; }
 
 watch() {
 	watchman.status && {
