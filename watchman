@@ -161,13 +161,13 @@ watchman.start() {
 		*)
 			[[ "$service_pidfile" ]] && {
 				[[ -f "$service_pidfile" ]] && {
-					service_pid=`cat "$service_pidfile"`
+					service_pid=`<${service_pidfile}`
 
 					kill -0 "$service_pid" &>/dev/null || {
 						watchman.msg "Waiting to make sure the process had time to wite its pid..."
 						sleep 3
 
-						service_pid=`cat "$service_pidfile"`
+						service_pid=`<${service_pidfile}`
 					}
 				}
 			} || {
@@ -304,9 +304,9 @@ watchman.reload() {
 watchman.logs() {
 	[[ -e "$service_logfile" ]] && {
 		watchman.msg "Output for ${service_name}:"
-		cat "$service_logfile" 2>/dev/null || {
-			watchman.err "Can't read the logfile :("
-		}
+		while read line; do
+			echo "$line"
+		done < "$service_logfile"
 	}
 }
 
@@ -365,7 +365,7 @@ watchman.main() {
 
 	action="${args[1]}"
 
-	[[ -e "$service_pidfile_int" ]] && { service_pid=`cat "$service_pidfile_int"`; }
+	[[ -e "$service_pidfile_int" ]] && { service_pid=$(<$service_pidfile_int); }
 	[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
 	[[ -e "$cfg_dir/groups/$service_name" ]] && { service_type='group'; }
 
@@ -391,7 +391,7 @@ watchman.main() {
 			[[ "$action" ]] || { watchman.service_usage; return 27; }
 
 			[[ "$service_pidfile" ]] && {
-				[[ -f "$service_pidfile" ]] && { service_pid=`cat "$service_pidfile"`; }
+				[[ -f "$service_pidfile" ]] && { service_pid=`<${service_pidfile}`; }
 			}
 
 			type -t "$action" &>/dev/null && {
