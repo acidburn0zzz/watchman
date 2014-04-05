@@ -358,6 +358,7 @@ watchman.main() {
 	[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
 
 	[[ -f "${cfg_initdir}/${service_name}" ]] && { service_script="${cfg_initdir}/${service_name}"; }
+	[[ -f "$1" ]] && { service_script="$1"; }
 
 	[[ "$service_script" ]] || {
 		watchman.err "$service_name doesn't exist in $cfg_initdir"
