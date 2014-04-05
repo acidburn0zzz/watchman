@@ -20,66 +20,18 @@
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Config
-watchman_version='1.4.1'
+watchman_version='1.4.2'
 
 # Functions
 
 watchman.usage() {
-	echo "Usage: watchman [flags] <service> <action>"
-	echo "Flags:"
-	echo "	-u, --user		Force user mode"
-	echo "	-s, --system	Force system mode"
-	echo "	-h, --help		Show this message"
-	echo "	-v, --verbose	Verbose output"
-}
-
-watchman.getopt() {
-	local keys
-
-	for i in "$@"; do
-		case "$i" in
-			--*) echo "$i";;
-
-			-*)
-				keys=( `echo "${i##*-}" | fold -w1` )
-
-				[[ "${#keys[@]}" -gt 1 ]] && {
-					for k in ${keys[@]}; do
-						echo "-${k}"
-					done
-				} || {
-					echo "$i"
-				}
-			;;
-
-			*) echo "$i";;
-		esac
-	done
-}
-
-watchman.args() {
-	while [[ "$1" ]]; do
-		case "$1" in
-			-u|--user) flag_user='1';;
-			-s|--system) unset flag_user;;
-			-v|--verbose) flag_verbose='1';;
-			
-			-h|--help) watchman.usage; exit;;
-			-V|--version)
-				watchman.msg "$watchman_version"
-				exit
-			;;
-
-			-*)
-				watchman.err "Invalid key: $1"
-				watchman.usage
-				return 1
-			;;
-
-			*) args+=( "$1" );;
-		esac
-		shift
-	done
+	cat <<- EOF
+		Usage: watchman [flags] <service> <action>
+		Flags:
+		    -h, --help      Show this message.
+		    -V, --version	Show watchman's version.
+		    -v, --verbose   Verbose output.
+	EOF
 }
 
 watchman.msg() { echo "[watchman] $1"; }
@@ -92,11 +44,6 @@ watchman.debug() {
 
 watchman.init() {
 	[[ "$UID" == '0' ]] || { flag_user='1'; }
-	watchman.args $(watchman.getopt "$@") || { return 3; }
-
-	[[ -f "${cfg_dir}/watchman.conf" ]] && {
-		source "${cfg_dir}/watchman.conf"
-	}
 
 	[[ "$flag_user" ]] && {
 		cfg_dir="${cfg_dir_user:-$HOME/.watchman}"
@@ -107,10 +54,13 @@ watchman.init() {
 		cfg_rundir="${cfg_rundir:-/run/watchman}"
 		cfg_logdir="${cfg_logdir:-/var/log/watchman}"
 	}
-
+	
 	cfg_initdir="${cfg_dir}/init.d"
-
 	cfg_init_dirs+=( "$cfg_dir"/{init.d,conf.d} "$cfg_rundir" "$cfg_logdir" )
+	
+	[[ -f "${cfg_dir}/watchman.conf" ]] && {
+		source "${cfg_dir}/watchman.conf"
+	}
 
 	for i in "${cfg_init_dirs[@]}"; do
 		[[ -e "$i" ]] || {
@@ -372,28 +322,42 @@ depends() { watchman.depends "$@"; }
 watchman.main() {
 	local rcode='0'
 
+	# Parse arguments
+	while [[ "$1" ]]; do
+		case "$1" in
+			-h|--help) watchman.usage; exit;;
+			-v|--verbose) flag_verbose='1';;
+			-V|--version) watchman.msg "$watchman_version"; exit;;
+
+			--) shift; break;;
+
+			-*)
+				watchman.err "Invalid key: $1"
+				watchman.usage
+				return 1
+			;;
+
+			*) break;;
+		esac
+		shift
+	done
+
 	watchman.init "$@" || { return "$?"; }
 
-	[[ "${args[0]}" ]] || {
+	[[ "$1" ]] || {
 		watchman.usage
 		return 9
 	}
 
-	service_name="${args[0]##*/}"
+	service_name="${1##*/}"
 	service_logfile="$cfg_logdir/${service_name}.log"
 	service_pidfile_int="$cfg_rundir/${service_name}.pid"
 
-	action="${args[1]}"
+	action="$2"
 
 	[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
 
-	[[ -e "${args[0]}" ]] && {
-		service_script="${args[0]}"
-	} || {
-		[[ -e "$cfg_initdir/$service_name" ]] && {
-			service_script="$cfg_initdir/$service_name"
-		}
-	}
+	[[ -f "${cfg_initdir}/${service_name}" ]] && { service_script="${cfg_initdir}/${service_name}"; }
 
 	[[ "$service_script" ]] || {
 		watchman.err "$service_name doesn't exist in $cfg_initdir"
