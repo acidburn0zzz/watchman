@@ -291,6 +291,22 @@ watchman.service_usage() {
 	watchman.msg "Usage: $service_name <${valid_actions%|*}>"
 }
 
+watchman.service_get_pid() {
+	local _pid
+
+	[[ -f "$service_pidfile_int" ]] && {
+		_pid="$(<${service_pidfile_int})"
+	}
+
+	[[ "$service_pidfile" ]] && {
+		[[ -f "$service_pidfile" ]] && {
+			_pid="$(<${service_pidfile})"
+		}
+	}
+
+	echo "$_pid"
+}
+
 watchman.reload() {
 	watchman.status || {
 		watchman.err "$service_name is not running"
@@ -337,6 +353,8 @@ status() {
 }
 logs() { watchman.logs; }
 
+get_pid() { watchman.service_get_pid; }
+
 watch() {
 	watchman.status && {
 		watchman.err "$service_name is already running"
@@ -365,7 +383,6 @@ watchman.main() {
 
 	action="${args[1]}"
 
-	[[ -e "$service_pidfile_int" ]] && { service_pid=`<$service_pidfile_int`; }
 	[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
 	[[ -e "$cfg_dir/groups/$service_name" ]] && { service_type='group'; }
 
@@ -390,9 +407,7 @@ watchman.main() {
 
 			[[ "$action" ]] || { watchman.service_usage; return 27; }
 
-			[[ "$service_pidfile" ]] && {
-				[[ -f "$service_pidfile" ]] && { service_pid=`<${service_pidfile}`; }
-			}
+			service_pid=$(get_pid)
 
 			type -t "$action" &>/dev/null && {
 				"$action" || { return "$?"; }
