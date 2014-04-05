@@ -88,7 +88,11 @@ watchman.debug() {
 
 watchman.init() {
 	[[ "$UID" == '0' ]] || { flag_user='1'; }
-	watchman.args "$@" || { return 3; }
+	watchman.args $(watchman.getopt "$@") || { return 3; }
+
+	[[ -f "${cfg_dir}/watchman.conf" ]] && {
+		source "${cfg_dir}/watchman.conf"
+	}
 
 	[[ "$flag_user" ]] && {
 		cfg_dir="${cfg_dir_user:-$HOME/.watchman}"
@@ -100,9 +104,9 @@ watchman.init() {
 		cfg_logdir="${cfg_logdir:-/var/log/watchman}"
 	}
 
-	cfg_initdir="$cfg_dir/init.d"
+	cfg_initdir="${cfg_dir}/init.d"
 
-	cfg_init_dirs+=( "$cfg_dir" "$cfg_rundir" "$cfg_initdir" "$cfg_logdir" )
+	cfg_init_dirs+=( "$cfg_dir"/{init.d,conf.d} "$cfg_rundir" "$cfg_logdir" )
 
 	for i in "${cfg_init_dirs[@]}"; do
 		[[ -e "$i" ]] || {
@@ -112,12 +116,6 @@ watchman.init() {
 			}
 		}
 	done
-
-	[[ -e "$cfg_cfgdir/conf.d" ]] && {
-		for i in `ls cfg_cfgdir/config.d`; do
-			source "$cfg_cfgdir/conf.d/$i"
-		done
-	}
 
 	return 0
 }
@@ -384,61 +382,36 @@ watchman.main() {
 	action="${args[1]}"
 
 	[[ "$service_actions" ]] || { service_actions=( 'start' 'stop' 'restart' 'reload' 'status' ); }
-	[[ -e "$cfg_dir/groups/$service_name" ]] && { service_type='group'; }
 
-	service_type=${service_type:-single}
+	[[ -e "${args[0]}" ]] && {
+		service_script="${args[0]}"
+	} || {
+		[[ -e "$cfg_initdir/$service_name" ]] && {
+			service_script="$cfg_initdir/$service_name"
+		}
+	}
 
-	case "$service_type" in
-		single)
-			[[ -e "${args[0]}" ]] && {
-				service_script="${args[0]}"
-			} || {
-				[[ -e "$cfg_initdir/$service_name" ]] && {
-					service_script="$cfg_initdir/$service_name"
-				}
-			}
+	[[ "$service_script" ]] || {
+		watchman.err "$service_name doesn't exist in $cfg_initdir"
+		return 11
+	}
 
-			[[ "$service_script" ]] || {
-				watchman.err "$service_name doesn't exist in $cfg_initdir"
-				return 11
-			}
+	source "$service_script" || { return 13; }
 
-			source "$service_script" || { return 13; }
+	[[ -f "${cfg_dir}/conf.d/${service_name}.sh" ]] && {
+		source "${cfg_dir}/conf.d/${service_name}.sh"
+	}
 
-			[[ -f "${cfg_dir}/conf.d/${service_name}.sh" ]] && {
-				source "${cfg_dir}/conf.d/${service_name}.sh"
-			}
+	[[ "$action" ]] || { watchman.service_usage; return 27; }
 
-			[[ "$action" ]] || { watchman.service_usage; return 27; }
+	service_pid=$(get_pid)
 
-			service_pid=$(get_pid)
-
-			type -t "$action" &>/dev/null && {
-				"$action" || { return "$?"; }
-			} || {
-				watchman.err "Function $action is not defined for $service_name"
-				return 17
-			}
-		;;
-
-		group)
-			group_services=( `ls "$cfg_dir/groups/$service_name"` )
-
-			[[ "${group_services}" ]] || {
-				watchman.err "Group $service_name is empty"
-				return 35
-			}
-
-			for i in "${group_services[@]}"; do
-				[[ -h "$cfg_cfgdir/groups/$service_name/$i" ]] && {
-					service_script=`realpath "$cfg_cfgdir/groups/$service_name/$i"`
-					"$service_script" "$action" || { rcode="$?"; }
-				} || {
-					"$0" "$i" "$action" || { rcode="$?"; }
-				}
-			done
-		;;
-	esac
+	type -t "$action" &>/dev/null && {
+		"$action" || { return "$?"; }
+	} || {
+		watchman.err "Function $action is not defined for $service_name"
+		return 17
+	}
 
 	return "$rcode"
 }
