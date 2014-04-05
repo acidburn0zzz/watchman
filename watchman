@@ -405,6 +405,10 @@ watchman.main() {
 
 			source "$service_script" || { return 13; }
 
+			[[ -f "${cfg_dir}/conf.d/${service_name}.sh" ]] && {
+				source "${cfg_dir}/conf.d/${service_name}.sh"
+			}
+
 			[[ "$action" ]] || { watchman.service_usage; return 27; }
 
 			service_pid=$(get_pid)
