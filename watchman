@@ -152,7 +152,7 @@ watchman.respawn() {
 
 		[[ "$?" == '127' ]] && {
 			while kill -0 "$job_pid"; do
-				sleep "${service_respawn_frequency:-3}"
+				sleep "${service_respawn_frequency:-1}"
 			done
 		}
 
@@ -309,7 +309,7 @@ watchman.logs() {
 	}
 }
 
-spawn() { watchman.spawn; }
+spawn() { watchman.spawn; return "$?"; }
 
 start() { watchman.start; return "$?"; }
 stop() { watchman.stop; return "$?"; }
