@@ -74,6 +74,8 @@ watchman.init() {
 	return 0
 }
 
+watchman.spawn() { "$service_command" $service_args &>"$service_logfile" & }
+
 watchman.start() {
 	watchman.status && {
 		watchman.err "$service_name is already running"
@@ -92,15 +94,7 @@ watchman.start() {
 		service_logfile='/dev/null'
 	}
 
-	[[ "$service_username" ]] && {
-		[[ "$UID" == '0' ]] || {
-			watchman.err "You can't use \$service_username if you are not root!"
-			return 19
-		}
-		su -s "$BASH" "$service_username" -c "$service_command $service_args" &>"$service_logfile" &
-	} || {
-		"$service_command" $service_args &>"$service_logfile" &
-	}
+	spawn
 
 	case "$service_type" in
 		oneshot)
@@ -277,6 +271,8 @@ watchman.logs() {
 		done < "$service_logfile"
 	}
 }
+
+spawn() { watchman.spawn; return "$?"; }
 
 start() { watchman.start; return "$?"; }
 stop() { watchman.stop; return "$?"; }
