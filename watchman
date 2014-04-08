@@ -126,6 +126,11 @@ watchman.start() {
 				return 1
 			}
 
+			[[ "$service_respawn" == 'true' ]] && {
+				watchman.respawn "$service_pid" &
+				service_pid="$!"
+			}
+
 			echo "$service_pid" > "$service_pidfile_int"
 			watchman.msg "$service_name started ($service_pid)"
 		;;
@@ -133,9 +138,37 @@ watchman.start() {
 }
 
 watchman.respawn() {
-	while true; do
-		wait "$service_pid"
-		start
+	local job_pid="$1"
+
+	watchman.respawn.exit() {
+		service_pid="${job_pid}"
+		stop
+	}
+
+	trap 'watchman.respawn.exit' EXIT
+
+	while kill -0 "$job_pid"; do
+		wait "$job_pid"
+
+		[[ "$?" == '127' ]] && {
+			while kill -0 "$job_pid"; do
+				sleep "${service_respawn_frequency:-3}"
+			done
+		}
+
+		spawn
+
+		type -t get_pid &>/dev/null && {
+			job_pid="$(get_pid)"
+		} || {
+			[[ "$service_pidfile" ]] && {
+				job_pid=$(<${service_pidfile})
+			} || {
+				job_pid="$!"
+			}
+		}
+
+		watchman.msg "Respawned $service_name ($job_pid)"
 	done
 }
 
@@ -144,7 +177,7 @@ watchman.depends() {
 
 	for s in "$@"; do
 		watchman "$s" status >/dev/null || {
-			watchman.msg "$service_name depends on $s, so starting ${s}..."
+			watchman.msg "Starting ${s} as ${service_name} depends on it."
 			"$0" "$s" start || {
 				watchman.err "Starting $s failed, aborting."
 				return 31
@@ -240,13 +273,17 @@ watchman.service_usage() {
 watchman.service_get_pid() {
 	local _pid
 
-	[[ -f "$service_pidfile_int" ]] && {
-		_pid="$(<${service_pidfile_int})"
-	}
+	type -t get_pid &>/dev/null && {
+		_pid="$(get_pid)"
+	} || {
+		[[ -f "$service_pidfile_int" ]] && {
+			_pid="$(<${service_pidfile_int})"
+		}
 
-	[[ "$service_pidfile" ]] && {
-		[[ -f "$service_pidfile" ]] && {
-			_pid="$(<${service_pidfile})"
+		[[ "$service_pidfile" ]] && {
+			[[ -f "$service_pidfile" ]] && {
+				_pid="$(<${service_pidfile})"
+			}
 		}
 	}
 
@@ -272,7 +309,7 @@ watchman.logs() {
 	}
 }
 
-spawn() { watchman.spawn; return "$?"; }
+spawn() { watchman.spawn; }
 
 start() { watchman.start; return "$?"; }
 stop() { watchman.stop; return "$?"; }
@@ -301,16 +338,9 @@ status() {
 }
 logs() { watchman.logs; }
 
-get_pid() { watchman.service_get_pid; }
-
 watch() {
-	watchman.status && {
-		watchman.err "$service_name is already running"
-		return 29
-	}
-
+	service_respawn='true'
 	start
-	watchman.respawn
 }
 
 depends() { watchman.depends "$@"; }
@@ -369,7 +399,7 @@ watchman.main() {
 
 	[[ "$action" ]] || { watchman.service_usage; return 27; }
 
-	service_pid=$(get_pid)
+	service_pid="$(watchman.service_get_pid)"
 
 	type -t "$action" &>/dev/null && {
 		"$action" || { return "$?"; }
