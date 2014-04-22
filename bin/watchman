@@ -230,8 +230,6 @@ watchman.stop() {
 		;;
 
 		*)
-			[[ "$service_respawn" ]] && { service_pid=$(<$service_pidfile_int); }
-			
 			kill "$service_pid"
 
 			kill -0 "$service_pid" &>/dev/null && {
@@ -281,9 +279,13 @@ watchman.service_usage() {
 watchman.service_get_pid() {
 	local _pid
 
-	type -t get_pid &>/dev/null && {
+	if [[ "$service_respawn" ]]; then
+		[[ -f "$service_pidfile_int" ]] && {
+			_pid="$(<$service_pidfile_int)"
+		}
+	elif type -t get_pid &>/dev/null; then
 		_pid="$(get_pid)"
-	} || {
+	else
 		[[ -f "$service_pidfile_int" ]] && {
 			_pid="$(<${service_pidfile_int})"
 		}
@@ -293,7 +295,7 @@ watchman.service_get_pid() {
 				_pid="$(<${service_pidfile})"
 			}
 		}
-	}
+	fi
 
 	echo "$_pid"
 }
