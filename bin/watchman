@@ -147,7 +147,6 @@ watchman.respawn() {
 
 	watchman.respawn::exit() {
 		service_pid="${job_pid}"
-		unset service_respawn
 		stop &>/dev/null || {
 			watchman.err "Failed to stop $service_name!"
 		}
