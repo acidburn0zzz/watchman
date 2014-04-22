@@ -14,12 +14,6 @@ Services
 A service is a script in the watchman's init.d directory.
 By default it's /etc/watchman/init.d for system services and $HOME/.watchman/init.d for user ones.
 
-Groups
-------
-Groups are directories in the watchman's config dir (/etc/watchman/groups or $HOME/.watchman/groups) with links to service files.
-Any action performed on a group is performed on all of the services in it.
-Watchman's exit code will be non-zero if any of the actions fail.
-
 Variables
 ---------
 There are some variables you can use to alter a service's behaviour.
