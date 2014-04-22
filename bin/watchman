@@ -20,7 +20,7 @@
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Config
-watchman_version='1.5-dev'
+watchman_version='1.5.1'
 
 # Functions
 
@@ -156,7 +156,7 @@ watchman.respawn() {
 	trap 'watchman.respawn::exit' EXIT
 
 	while kill -0 "$job_pid" 2>/dev/null; do
-		wait "$job_pid" #2>/dev/null
+		wait "$job_pid" 2>/dev/null
 
 		[[ "$?" == '127' ]] && {
 			while kill -0 "$job_pid" 2>/dev/null; do
