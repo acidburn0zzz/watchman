@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+cfg_init_dirs=( '/etc/watchman/init.d' '/etc/rc.d' "$HOME/.watchman/init.d" )
+
+service="$1"; shift
+
+for i in "${cfg_init_dirs[@]}"; do
+	[[ -f "${i}/${service}" ]] && {
+		service_script="${i}/${service}"
+	}
+done
+
+[[ "$service_script" ]] || {
+	echo "Service $service not found."
+	exit 1
+}
+
+"$service_script" "$@"
