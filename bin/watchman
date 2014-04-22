@@ -167,11 +167,11 @@ watchman.respawn() {
 		spawn
 
 		if type -t get_pid &>/dev/null; then
-			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to write its pidfile
-			job_pid=$(<${service_pidfile})
-		elif [[ "$service_pidfile" ]]; then
 			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to spawn properly
 			job_pid="$(get_pid)"
+		elif [[ "$service_pidfile" ]]; then
+			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to write its pidfile
+			job_pid=$(<${service_pidfile})
 		else
 			job_pid="$!"
 		fi
