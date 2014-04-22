@@ -317,7 +317,6 @@ watchman.logs() {
 	}
 }
 
-#spawn() { "$service_command" $service_args &>"$service_logfile" & }
 spawn() { watchman.spawn; }
 
 start() { watchman.start; return "$?"; }
