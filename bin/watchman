@@ -105,7 +105,11 @@ watchman.start() {
 		;;
 
 		*)
-			if [[ "$service_pidfile" ]]; then
+			if type -t get_pid &>/dev/null; then
+				watchman.msg "Making sure the service had time to spawn properly..."
+				sleep "${service_spawn_delay:-"3"}"
+				service_pid="$(get_pid)"
+			elif [[ "$service_pidfile" ]]; then
 				[[ -f "$service_pidfile" ]] && {
 					service_pid=`<${service_pidfile}`
 
@@ -115,10 +119,6 @@ watchman.start() {
 						service_pid=`<${service_pidfile}`
 					}
 				}
-			elif type -t get_pid &>/dev/null; then
-				watchman.msg "Making sure the service had time to spawn properly..."
-				sleep "${service_spawn_delay:-"3"}"
-				service_pid="$(get_pid)"
 			else
 				service_pid="$!"
 			fi
