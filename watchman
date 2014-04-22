@@ -142,16 +142,18 @@ watchman.respawn() {
 
 	watchman.respawn.exit() {
 		service_pid="${job_pid}"
-		stop
+		stop &>/dev/null || {
+			watchman.err "Failed to stop $service_name!"
+		}
 	}
 
 	trap 'watchman.respawn.exit' EXIT
 
-	while kill -0 "$job_pid"; do
-		wait "$job_pid"
+	while kill -0 "$job_pid" 2>/dev/null; do
+		wait "$job_pid" 2>/dev/null
 
 		[[ "$?" == '127' ]] && {
-			while kill -0 "$job_pid"; do
+			while kill -0 "$job_pid" 2>/dev/null; do
 				sleep "${service_respawn_frequency:-1}"
 			done
 		}
