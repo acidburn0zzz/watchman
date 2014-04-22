@@ -105,29 +105,34 @@ watchman.start() {
 		;;
 
 		*)
-			[[ "$service_pidfile" ]] && {
+			if [[ "$service_pidfile" ]]; then
 				[[ -f "$service_pidfile" ]] && {
 					service_pid=`<${service_pidfile}`
 
 					kill -0 "$service_pid" &>/dev/null || {
-						watchman.msg "Waiting to make sure the process had time to wite its pid..."
-						sleep 3
-
+						watchman.msg "Waiting to make sure the process had time to wite its pidfile..."
+						sleep "${service_spawn_delay:-"3"}"
 						service_pid=`<${service_pidfile}`
 					}
 				}
-			} || {
+			elif type -t get_pid &>/dev/null; then
+				watchman.msg "Making sure the service had time to spawn properly..."
+				sleep "${service_spawn_delay:-"3"}"
+				service_pid="$(get_pid)"
+			else
 				service_pid="$!"
-			}
+			fi
 
 			# Exit if the service instantly dies or doesn't start at all
 			kill -0 "$service_pid" &>/dev/null || {
-				watchman.err "Failed to start $service_name ($?)"
+				watchman.err "Failed to start ${service_name}."
 				return 1
 			}
 
 			[[ "$service_respawn" == 'true' ]] && {
+				watchman.msg "Starting watchdog for $service_name"
 				watchman.respawn "$service_pid" &
+				unset get_pid
 				service_pid="$!"
 			}
 
@@ -140,17 +145,18 @@ watchman.start() {
 watchman.respawn() {
 	local job_pid="$1"
 
-	watchman.respawn.exit() {
+	watchman.respawn::exit() {
 		service_pid="${job_pid}"
+		unset service_respawn
 		stop &>/dev/null || {
 			watchman.err "Failed to stop $service_name!"
 		}
 	}
 
-	trap 'watchman.respawn.exit' EXIT
+	trap 'watchman.respawn::exit' EXIT
 
 	while kill -0 "$job_pid" 2>/dev/null; do
-		wait "$job_pid" 2>/dev/null
+		wait "$job_pid" #2>/dev/null
 
 		[[ "$?" == '127' ]] && {
 			while kill -0 "$job_pid" 2>/dev/null; do
@@ -160,17 +166,15 @@ watchman.respawn() {
 
 		spawn
 
-		type -t get_pid &>/dev/null && {
+		if [[ "$service_pidfile" ]]; then
+			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to write its pidfile
+			job_pid=$(<${service_pidfile})
+		elif type -t get_pid &>/dev/null; then
+			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to spawn properly
 			job_pid="$(get_pid)"
-		} || {
-			[[ "$service_pidfile" ]] && {
-				job_pid=$(<${service_pidfile})
-			} || {
-				job_pid="$!"
-			}
-		}
-
-		watchman.msg "Respawned $service_name ($job_pid)"
+		else
+			job_pid="$!"
+		fi
 	done
 }
 
@@ -226,6 +230,8 @@ watchman.stop() {
 		;;
 
 		*)
+			[[ "$service_respawn" ]] && { service_pid=$(<$service_pidfile_int); }
+			
 			kill "$service_pid"
 
 			kill -0 "$service_pid" &>/dev/null && {
@@ -311,7 +317,8 @@ watchman.logs() {
 	}
 }
 
-spawn() { watchman.spawn; return "$?"; }
+#spawn() { "$service_command" $service_args &>"$service_logfile" & }
+spawn() { watchman.spawn; }
 
 start() { watchman.start; return "$?"; }
 stop() { watchman.stop; return "$?"; }
