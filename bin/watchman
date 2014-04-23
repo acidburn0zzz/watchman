@@ -110,15 +110,12 @@ watchman.start() {
 				sleep "${service_spawn_delay:-"3"}"
 				service_pid="$(get_pid)"
 			elif [[ "$service_pidfile" ]]; then
-				[[ -f "$service_pidfile" ]] && {
-					service_pid=`<${service_pidfile}`
-
-					kill -0 "$service_pid" &>/dev/null || {
-						watchman.msg "Waiting to make sure the process had time to wite its pidfile..."
-						sleep "${service_spawn_delay:-"3"}"
-						service_pid=`<${service_pidfile}`
-					}
+				[[ -f "$service_pidfile" ]] || {
+					watchman.msg "Making sure the process had time to wite its pidfile..."
+					sleep "${service_spawn_delay:-"3"}"
 				}
+
+				[[ -f "$service_pidfile" ]] && { service_pid=`<${service_pidfile}`; }
 			else
 				service_pid="$!"
 			fi
@@ -169,7 +166,9 @@ watchman.respawn() {
 			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to spawn properly
 			job_pid="$(get_pid)"
 		elif [[ "$service_pidfile" ]]; then
-			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to write its pidfile
+			[[ -f "$service_pidfile" ]] || {
+				sleep "${service_spawn_delay:-"3"}" # make sure the service had time to write its pidfile
+			}
 			job_pid=$(<${service_pidfile})
 		else
 			job_pid="$!"
