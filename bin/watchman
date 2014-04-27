@@ -25,7 +25,7 @@ watchman_version='1.5.2'
 # Functions
 
 watchman.usage() {
-	cat <<- EOF
+	while read; do echo -e "$REPLY"; done <<- EOF
 		Usage: watchman [flags] <service> <action>
 		Flags:
 		    -h, --help      Show this message.
@@ -312,7 +312,7 @@ watchman.logs() {
 	[[ -e "$service_logfile" ]] && {
 		watchman.msg "Output for ${service_name}:"
 		while read; do
-			printf "$REPLY"
+			echo -e "$REPLY"
 		done < "$service_logfile"
 	}
 }
