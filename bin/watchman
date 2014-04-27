@@ -311,8 +311,8 @@ watchman.reload() {
 watchman.logs() {
 	[[ -e "$service_logfile" ]] && {
 		watchman.msg "Output for ${service_name}:"
-		while read line; do
-			echo "$line"
+		while read; do
+			printf "$REPLY"
 		done < "$service_logfile"
 	}
 }
