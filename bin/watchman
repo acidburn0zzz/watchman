@@ -399,11 +399,11 @@ watchman.main() {
 		return 11
 	}
 
-	source "$service_script" || { return 13; }
-
 	[[ -f "${cfg_dir}/conf.d/${service_name}.sh" ]] && {
 		source "${cfg_dir}/conf.d/${service_name}.sh"
 	}
+	
+	source "$service_script" || { return 13; }
 
 	[[ "$action" ]] || { watchman.service_usage; return 27; }
 
