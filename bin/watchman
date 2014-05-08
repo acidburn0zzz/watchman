@@ -317,12 +317,33 @@ watchman.logs() {
 	}
 }
 
+watchman.args() {
+	while [[ "$1" ]]; do
+		case "$1" in
+			-h|--help) watchman.usage; exit;;
+			-v|--verbose) flag_verbose='1';;
+			-V|--version) watchman.msg "$watchman_version"; exit;;
+
+			--) shift; break;;
+
+			-*)
+				watchman.err "Invalid key: $1"
+				watchman.usage
+				return 1
+			;;
+
+			*) args+=( "$1" );;
+		esac; shift
+	done
+}
+
 spawn() { watchman.spawn; }
 
-start() { watchman.start; return "$?"; }
-stop() { watchman.stop; return "$?"; }
-restart() { stop; start; return "$?"; }
-reload() { watchman.reload; return "$?"; }
+start() { watchman.start; }
+stop() { watchman.stop; }
+restart() { stop; start; }
+reload() { watchman.reload; }
+
 status() {
 	local service_status
 
@@ -344,6 +365,7 @@ status() {
 
 	return 33
 }
+
 logs() { watchman.logs; }
 
 watch() {
@@ -357,24 +379,8 @@ watchman.main() {
 	local rcode='0'
 
 	# Parse arguments
-	while [[ "$1" ]]; do
-		case "$1" in
-			-h|--help) watchman.usage; exit;;
-			-v|--verbose) flag_verbose='1';;
-			-V|--version) watchman.msg "$watchman_version"; exit;;
-
-			--) shift; break;;
-
-			-*)
-				watchman.err "Invalid key: $1"
-				watchman.usage
-				return 1
-			;;
-
-			*) break;;
-		esac
-		shift
-	done
+	watchman.args "$@"
+	set -- "${args[@]}"
 
 	watchman.init "$@" || { return "$?"; }
 
@@ -410,9 +416,12 @@ watchman.main() {
 	service_pid="$(watchman.service_get_pid)"
 
 	type -t "$action" &>/dev/null && {
-		"$action" || { return "$?"; }
+		"$action" || {
+			watchman.err "Function $action failed for ${service_name}."
+			return "$?"
+		}
 	} || {
-		watchman.err "Function $action is not defined for $service_name"
+		watchman.err "Function $action is not defined for ${service_name}."
 		return 17
 	}
 
