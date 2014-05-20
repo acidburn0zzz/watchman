@@ -55,12 +55,10 @@ watchman.init() {
 		cfg_logdir="${cfg_logdir:-/var/log/watchman}"
 	}
 	
+	[[ -f "${cfg_dir}/watchman.conf" ]] && { source "${cfg_dir}/watchman.conf"; }
+	
 	cfg_initdir="${cfg_dir}/init.d"
 	cfg_init_dirs+=( "$cfg_dir"/{init.d,conf.d} "$cfg_rundir" "$cfg_logdir" )
-	
-	[[ -f "${cfg_dir}/watchman.conf" ]] && {
-		source "${cfg_dir}/watchman.conf"
-	}
 
 	for i in "${cfg_init_dirs[@]}"; do
 		[[ -e "$i" ]] || {
