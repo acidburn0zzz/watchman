@@ -4,11 +4,6 @@ watchman
 My half-assed service manager.
 Documentation pending.
 
-Releases
---------
-I don't really do releases. Don't expect them often.
-The master branch should be stable enough to use at this point though, I don't merge untested shit (very often).
-
 Services
 --------
 A service is a script in the watchman's init.d directory.
