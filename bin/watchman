@@ -77,7 +77,7 @@ watchman.spawn() { "$service_command" $service_args &>"$service_logfile" & }
 watchman.start() {
 	watchman.status && {
 		watchman.err "$service_name is already running"
-		return 7
+		return 1
 	}
 
 	[[ "$service_command" ]] || { service_command=`which "$service_name"`; }
@@ -121,7 +121,7 @@ watchman.start() {
 			# Exit if the service instantly dies or doesn't start at all
 			kill -0 "$service_pid" &>/dev/null || {
 				watchman.err "Failed to start ${service_name}."
-				return 1
+				return 3
 			}
 
 			[[ "$service_respawn" == 'true' ]] && {
@@ -178,7 +178,7 @@ watchman.depends() {
 	[[ "$action" == 'start' ]] || { return 0; }
 
 	for s in "$@"; do
-		watchman "$s" status >/dev/null || {
+		"$0" "$s" status || {
 			watchman.msg "Starting ${s} as ${service_name} depends on it."
 			"$0" "$s" start || {
 				watchman.err "Starting $s failed, aborting."
@@ -216,7 +216,7 @@ watchman.stop() {
 
 	watchman.status || {
 		watchman.err "$service_name doesn't seem to be running"
-		return 21
+		return 1
 	}
 
 	case "$service_type" in
@@ -259,7 +259,7 @@ watchman.status() {
 		;;
 	esac
 
-	return 25
+	return 1
 }
 
 watchman.service_usage() {
@@ -361,7 +361,7 @@ status() {
 		watchman.msg "$service_name is down"
 	}
 
-	return 33
+	return 1
 }
 
 logs() { watchman.logs; }
@@ -415,8 +415,11 @@ watchman.main() {
 
 	type -t "$action" &>/dev/null && {
 		"$action" || {
-			watchman.err "Function $action failed for ${service_name}."
-			return "$?"
+			action_rcode="$?"
+			[[ "$action_rcode" -gt 1 ]] && {
+				watchman.err "Function $action failed for ${service_name}."
+			}
+			return "$action_rcode"
 		}
 	} || {
 		watchman.err "Function $action is not defined for ${service_name}."
@@ -428,4 +431,4 @@ watchman.main() {
 
 # Main
 watchman.main "$@"
-exit "$?"
+#exit "$?"
