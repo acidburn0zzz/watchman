@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+respawn::run() {
+	local try
+
+	"$@" >&3 2>&3 &
+
+	export job_id="$!"
+
+	if [[ "$job_pidfile" ]]; then
+		echo "Waiting for the job to write its pidfile"
+		while ! kill -0 $(<"$job_pidfile") 2>/dev/null; do
+			[[ "$try" -ge "${pidfile_timeout:-3}" ]] && {
+				echo "Failed to start job"
+				return 3
+			}
+
+			try=$[try+1]
+			sleep 1
+		done
+
+		job_id=$(<"$job_pidfile")
+	fi
+}
+
+respawn::watchdog() {
+	respawn::watchdog.cleanup() { respawn::kill_wait "$job_id"; }
+
+	trap 'respawn::watchdog.cleanup' EXIT
+
+	if [[ "$job_pidfile" ]]; then
+		respawn::run "$@"
+
+		while sleep 1; do
+			kill -0 "$job_pid" || {
+				respawn::run "$@"
+			}
+		done
+	else
+		while respawn::run "$@"; do
+			kill -0 "$job_id" && {
+				wait "$job_id"
+
+				[[ "$?" -eq 127 ]] && { return 3; }
+			}
+		done
+	fi
+}
+
+respawn::kill_wait() {
+	kill "$1"
+
+	while kill -0 "$1" 2>/dev/null; do
+		[[ "$try" -ge "${kill_timeout:-30}" ]] && {
+			echo "Failed to kill process: $1"
+			return 3
+		}
+
+		try=$[try+1]
+
+		sleep 1
+	done
+
+	return 0
+}
+
+respawn::cleanup() {
+	echo "Cleaning up."
+
+	respawn::kill_wait "$watchdog_id"
+	[[ -f "$job_lockfile" ]] && { rm -v "$job_lockfile"; }
+
+	exit 0
+}
+
+respawn::restart() {
+	respawn::kill_wait "$watchdog_id" && {
+		respawn::watchdog ${job_cmd} & export watchdog_id="$!"
+	}
+}
+
+respawn::status() { echo "watchdog pid: $watchdog_id"; }
+
+respawn::main() {
+	local job_logfile
+
+	while [[ "$1" ]]; do
+		case "$1" in
+			-h) respawn::usage;;
+			-l) job_logfile="$2"; shift;;
+			-c) job_lockfile="$2"; shift;;
+			-p) job_pidfile="$2"; shift;;
+
+			--kill-timeout) kill_timeout="$2"; shift;;
+
+			-*) respawn::usage; return 3;;
+			*) break;;
+		esac
+		shift
+	done
+	
+	trap 'respawn::cleanup' INT TERM
+	trap 'respawn::restart' HUP
+	trap 'respawn::status' QUIT
+
+	job_cmd="$@"
+
+	[[ "$job_lockfile" ]] && {
+		[[ -f "$job_lockfile" ]] && {
+			echo "${job_lockfile} exists. If you are sure this job is not running already, remove ${job_lockfile} manually."
+			return 1
+		}
+
+		>"$job_lockfile" || {
+			echo "Could not create ${job_lockfile}"
+			return 3
+		}
+	}
+
+	exec 3>"${job_logfile:-/dev/stdout}"
+
+	respawn::watchdog ${job_cmd} & export watchdog_id="$!"
+	
+	while :; do read; done
+}
+
+respawn::main "$@"

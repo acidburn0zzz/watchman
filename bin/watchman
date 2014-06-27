@@ -20,7 +20,7 @@
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Config
-watchman_version='1.5.4'
+watchman_version='1.6'
 
 # Functions
 
@@ -72,9 +72,9 @@ watchman.init() {
 	return 0
 }
 
-watchman.spawn() { "$service_command" $service_args &>"$service_logfile" & }
-
 watchman.start() {
+	local try
+
 	watchman.status && {
 		watchman.err "$service_name is already running"
 		return 1
@@ -92,7 +92,22 @@ watchman.start() {
 		service_logfile='/dev/null'
 	}
 
-	spawn
+	if [[ "$service_respawn" ]]; then
+		if >"$cfg_logdir/${service_name}_respawn.log"; then
+			watchdog_logfile="$cfg_logdir/${service_name}_respawn.log"
+		else
+			watchman.msg "Warning! Watchdog logfile is not writeable! Defaulting to /dev/null"
+			watchdog_logfile='/dev/null'
+		fi
+
+		if [[ "$service_pidfile" ]]; then
+			respawn -l "${service_logfile}" -c "${cfg_rundir}/${service_name}.lock" "${service_command}" ${service_args} &>"${watchdog_logfile}" &
+		else
+			respawn -l "${service_logfile}" -c "${cfg_rundir}/${service_name}.lock" -p "${service_pidfile}" "${service_command}" ${service_args} &>"${watchdog_logfile}" &
+		fi
+	else
+		"$service_command" $service_args &>"$service_logfile" &
+	fi
 
 	case "$service_type" in
 		oneshot)
@@ -105,12 +120,18 @@ watchman.start() {
 		*)
 			if type -t get_pid &>/dev/null; then
 				watchman.msg "Making sure the service had time to spawn properly..."
-				sleep "${service_spawn_delay:-"3"}"
-				service_pid="$(get_pid)"
+				try=0; while [[ -z "$service_pid" && "$try" -lt "${service_spawn_delay:-"3"}" ]]; do
+					service_pid="$(get_pid)"
+					try=$[try+1]
+					sleep 1
+				done
 			elif [[ "$service_pidfile" ]]; then
 				[[ -f "$service_pidfile" ]] || {
 					watchman.msg "Making sure the process had time to wite its pidfile..."
-					sleep "${service_spawn_delay:-"3"}"
+					try=0; while [[ ! -f "$service_pidfile" && "$try" -lt "${service_spawn_delay:-"3"}" ]]; do
+						try=$[try+1]
+						sleep 1
+					done
 				}
 
 				[[ -f "$service_pidfile" ]] && { service_pid=`<${service_pidfile}`; }
@@ -118,60 +139,21 @@ watchman.start() {
 				service_pid="$!"
 			fi
 
-			# Exit if the service instantly dies or doesn't start at all
-			kill -0 "$service_pid" &>/dev/null || {
-				watchman.err "Failed to start ${service_name}."
-				return 3
-			}
+			# Wait for the service to spawn and exit if it doesn't
+			try=0
+			while ! kill -0 "$service_pid" &>/dev/null; do
+				[[ "$try" -ge "${service_spawn_delay:-"3"}" ]] && {
+					return 3
+				}
 
-			[[ "$service_respawn" == 'true' ]] && {
-				watchman.msg "Starting watchdog for $service_name"
-				watchman.respawn "$service_pid" &
-				unset get_pid
-				service_pid="$!"
-			}
+				try=$[try+1]; sleep 1
+			done
+
 
 			echo "$service_pid" > "$service_pidfile_int"
 			watchman.msg "$service_name started ($service_pid)"
 		;;
 	esac
-}
-
-watchman.respawn() {
-	local job_pid="$1"
-
-	watchman.respawn::exit() {
-		service_pid="${job_pid}"
-		stop &>/dev/null || {
-			watchman.err "Failed to stop $service_name!"
-		}
-	}
-
-	trap 'watchman.respawn::exit' EXIT
-
-	while kill -0 "$job_pid" 2>/dev/null; do
-		wait "$job_pid" 2>/dev/null
-
-		[[ "$?" == '127' ]] && {
-			while kill -0 "$job_pid" 2>/dev/null; do
-				sleep "${service_respawn_frequency:-1}"
-			done
-		}
-
-		spawn
-
-		if type -t get_pid &>/dev/null; then
-			sleep "${service_spawn_delay:-"3"}" # make sure the service had time to spawn properly
-			job_pid="$(get_pid)"
-		elif [[ "$service_pidfile" ]]; then
-			[[ -f "$service_pidfile" ]] || {
-				sleep "${service_spawn_delay:-"3"}" # make sure the service had time to write its pidfile
-			}
-			job_pid=$(<${service_pidfile})
-		else
-			job_pid="$!"
-		fi
-	done
 }
 
 watchman.depends() {
@@ -228,15 +210,10 @@ watchman.stop() {
 		*)
 			kill "$service_pid"
 
-			kill -0 "$service_pid" &>/dev/null && {
-				watchman.pid_wait "$service_pid" || {
-					watchman.err "Failed to stop $service_name"
-					return 23
-				}
-			}
+			watchman.pid_wait "$service_pid" || { return 3; }
 
 			for i in "${service_pidfile}" "${service_pidfile_int}"; do
-				[[ -e "$i" ]] && {
+				[[ -f "$i" ]] && {
 					rm "$i" || {
 						watchman.err "Failed to remove pidfile: $i"
 					}
@@ -253,9 +230,15 @@ watchman.status() {
 		;;
 
 		*)
-			[[ "$service_pid" ]] && {
-				kill -0 "$service_pid" &>/dev/null && { return 0; }
-			}
+			if [[ "$service_respawn" ]]; then
+				[[ -f "${cfg_rundir}/${service_name}.lock" ]] && { 
+					return 0
+				}
+			else
+				[[ "$service_pid" ]] && {
+					kill -0 "$service_pid" &>/dev/null && { return 0; }
+				}
+			fi
 		;;
 	esac
 
@@ -365,11 +348,6 @@ status() {
 }
 
 logs() { watchman.logs; }
-
-watch() {
-	service_respawn='true'
-	start
-}
 
 depends() { watchman.depends "$@"; }
 
