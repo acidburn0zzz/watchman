@@ -93,6 +93,11 @@ watchman.start() {
 	}
 
 	if [[ "$service_respawn" ]]; then
+		[[ "$service_type" == 'oneshot' ]] && {
+			watchdog.err "A oneshot service can not be respawned. Choose one or the other."
+			return 1
+		}
+
 		if >"$cfg_logdir/${service_name}_respawn.log"; then
 			watchdog_logfile="$cfg_logdir/${service_name}_respawn.log"
 		else
