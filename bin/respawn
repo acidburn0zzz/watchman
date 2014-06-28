@@ -121,7 +121,9 @@ respawn::main() {
 
 	respawn::watchdog ${job_cmd} & export watchdog_id="$!"
 	
-	while :; do read; done
+	while read; do
+		:
+	done
 }
 
 respawn::main "$@"
