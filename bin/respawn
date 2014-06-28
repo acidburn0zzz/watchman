@@ -81,6 +81,12 @@ respawn::restart() {
 
 respawn::status() { echo "watchdog pid: $watchdog_id"; }
 
+respawn::usage() {
+	cat <<- EOF
+		Usage: respawn [-p pidfile] [-l logfile] <-c lockfile> <command>
+	EOF
+}
+
 respawn::main() {
 	local job_logfile
 
