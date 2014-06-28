@@ -16,7 +16,6 @@ All of them are optional. Yes, I mean all of them.
 
 	$service_command	# The service's executable. Watchman will try to find the service in $PATH by the service name, so yes, even this is optional.
 	$service_args		# Arguments to $service_command
-	$service_username	# The user to run the service as
 	$service_workdir	# The directory to cd to before running $service_command
 	$service_pidfile	# The service's pid file. Will not be overwritten by watchman. By specifying this, you basically tell watchman that the service mantains it's pidfile itself.
 	$service_logfile	# The file with $service_command's stdout/stderr.
@@ -32,7 +31,6 @@ Standart functions:
 	restart()	# Restart the service. Calls stop(), then start().
 	reload()	# Reload the service's configuration. Calls watchman.reload, which sends SIGHUP to the service.
 	status()	# Show the service's status. Calls watchman.status().
-	watch()		# Watch the service. Starts the service if needed and calls watchman.watch().
 	depends()	# Starts the specified services. Calls watchman.depends.
 	logs()		# Shows the service stdout log. Calls watchman.logs.
 
@@ -49,6 +47,5 @@ Internal functions:
 	watchman.stop								# Stops the service, waits for the PID to die.
 	watchman.status								# Shows the status of the service.
 	watchman.reload								# Sends SIGHUP to the service.
-	watchman.watch								# Checks in a loop if the service is running. Restarts it if needed.
 	watchman.pid_wait							# Wait for the service pid to die.
 	watchman.logs								# Shows the service stdout log from $service_logfile.
